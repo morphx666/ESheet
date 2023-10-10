@@ -1,6 +1,7 @@
 ﻿using NCalc;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace ESheet.Classes {
     internal class Evaluator {
@@ -14,7 +15,7 @@ namespace ESheet.Classes {
         private CustomFunctionDel mCustomFunction;
 
         private Expression exp;
-        private readonly Random rnd = new Random();
+        private readonly Random rnd = new();
 
         public CustomFunctionDel CustomFunctionHandler {
             get { return mCustomFunction; }
@@ -64,7 +65,7 @@ namespace ESheet.Classes {
             }
         }
 
-        public Dictionary<string, object> Variables {
+        public Dictionary<string, object>? Variables {
             get { return exp?.Parameters; }
         }
 
@@ -74,20 +75,6 @@ namespace ESheet.Classes {
 
         public double Evaluate() {
             return exp == null ? 0 : (double)exp.Evaluate();
-        }
-
-        public double Evaluate(double xValue) {
-            if(exp == null) {
-                return 0;
-            } else {
-                mCustomParameters["x"] = xValue;
-                try {
-                    double result = (double)exp.Evaluate();
-                    return double.IsInfinity(result) ? Infinity : result;
-                } catch(OverflowException) {
-                    return Infinity;
-                }
-            }
         }
     }
 }

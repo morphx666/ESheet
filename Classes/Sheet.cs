@@ -33,10 +33,14 @@ internal class Sheet {
     }
 
     public void Render() {
-        if(SheetColumnToConsoleColumn(SelColumn - StartColumn) >= Console.WindowWidth - OffsetLeft) StartColumn++;
-        if(SelColumn < StartColumn) StartColumn--;
-        if((SelRow - StartRow) >= Console.WindowHeight - OffsetTop - 1) StartRow++;
-        if(SelRow < StartRow) StartRow--;
+        if(SheetColumnToConsoleColumn(SelColumn - StartColumn) >= Console.WindowWidth - OffsetLeft)
+            StartColumn++;
+        if(SelColumn < StartColumn)
+            StartColumn--;
+        if((SelRow - StartRow) >= Console.WindowHeight - OffsetTop - 1)
+            StartRow++;
+        if(SelRow < StartRow)
+            StartRow--;
 
         Console.CursorVisible = false;
 
@@ -64,13 +68,15 @@ internal class Sheet {
 
             switch(ck.Key) {
                 case ConsoleKey.UpArrow:
-                    if(SelRow > 0) SelRow--;
+                    if(SelRow > 0)
+                        SelRow--;
                     break;
                 case ConsoleKey.DownArrow:
                     SelRow++;
                     break;
                 case ConsoleKey.LeftArrow:
-                    if(SelColumn > 0) SelColumn--;
+                    if(SelColumn > 0)
+                        SelColumn--;
                     break;
                 case ConsoleKey.RightArrow:
                     SelColumn++;
@@ -79,24 +85,32 @@ internal class Sheet {
                     return;
 
                 case ConsoleKey.Backspace:
-                    if(userInput.Length > 0) userInput = userInput[..^1];
+                    if(userInput.Length > 0)
+                        userInput = userInput[..^1];
                     break;
 
                 case ConsoleKey.Enter:
                     if(userInput.Length > 0) {
                         Cell? cell = GetCell(SelColumn, SelRow);
                         if(cell == null) {
-                            cell = new Cell(SelColumn, SelRow);
+                            cell = new Cell(this, SelColumn, SelRow);
                             Cells.Add(cell);
                         }
 
                         cell.Value = userInput;
+
+                        string name = GetColumnName(SelColumn) + (SelRow + 1).ToString();
+                        foreach(Cell c in Cells) {
+                            if(c.Type == Cell.Types.Formula && c.Value.Contains(name)) c.Refresh();
+                        }
+
                         userInput = "";
                     }
                     break;
 
                 default:
-                    if(userInput.Length < Console.WindowWidth - OffsetLeft - RowWidth) userInput += ck.KeyChar;
+                    if(userInput.Length < Console.WindowWidth - OffsetLeft - RowWidth)
+                        userInput += ck.KeyChar;
                     break;
             }
         }
@@ -107,7 +121,7 @@ internal class Sheet {
         Console.Write(text + emptyRow);
     }
 
-    private Cell? GetCell(int col, int row) {
+    internal Cell? GetCell(int col, int row) {
         foreach(Cell cell in Cells) {
             if(cell.Column == col && cell.Row == row) {
                 return cell;
@@ -115,6 +129,11 @@ internal class Sheet {
         }
 
         return null;
+    }
+
+    internal Cell? GetCell(string name) {
+        (int col, int row) = GetCellColRow(name);
+        return GetCell(col, row);
     }
 
     private void RenderSheet() {
@@ -155,7 +174,8 @@ internal class Sheet {
             if(result.Overflow) {
                 c = 0;
                 r++;
-                if(r == Console.WindowHeight - OffsetTop - 1) break;
+                if(r == Console.WindowHeight - OffsetTop - 1)
+                    break;
             } else {
                 c++;
             };
@@ -221,7 +241,6 @@ internal class Sheet {
                 } else {
                     c += (name[i] - '@') * (int)Math.Pow(10, k - 1) * ccCount;
                 }
-                
                 k++;
             }
         }
@@ -232,16 +251,12 @@ internal class Sheet {
     private string AlignText(string text, int width, Cell.Alignments alignment, int margin = 1) {
         string sm = new(' ', margin);
 
-        switch(alignment) {
-            case Cell.Alignments.Left:
-                return sm + text.PadRight(width - margin);
-            case Cell.Alignments.Center:
-                return (" ".PadLeft((int)Math.Ceiling((width - text.Length) / 2.0)) + text).PadRight(width);
-            case Cell.Alignments.Right:
-                return text.PadLeft(width - margin) + sm;
-            default:
-                return text;
-        }
+        return alignment switch {
+            Cell.Alignments.Left => sm + text.PadRight(width - margin),
+            Cell.Alignments.Center => (" ".PadLeft((int)Math.Ceiling((width - text.Length) / 2.0)) + text).PadRight(width),
+            Cell.Alignments.Right => text.PadLeft(width - margin) + sm,
+            _ => text,
+        };
     }
 
     private void SetColors(ConsoleColor fore, ConsoleColor back) {
