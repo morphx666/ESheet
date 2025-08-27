@@ -1,5 +1,3 @@
-using ESheet.Classes;
-using System.Diagnostics;
 using System.Text;
 
 internal class Sheet {
@@ -27,9 +25,6 @@ internal class Sheet {
 
     public Sheet() {
         emptyCell = AlignText(" ", CellWidth, Cell.Alignments.Left);
-
-        var x = GetCellColRow("CB1");
-        var y = GetColumnName(x.Column);
     }
 
     public void Render() {
@@ -68,15 +63,13 @@ internal class Sheet {
 
             switch(ck.Key) {
                 case ConsoleKey.UpArrow:
-                    if(SelRow > 0)
-                        SelRow--;
+                    if(SelRow > 0) SelRow--;
                     break;
                 case ConsoleKey.DownArrow:
                     SelRow++;
                     break;
                 case ConsoleKey.LeftArrow:
-                    if(SelColumn > 0)
-                        SelColumn--;
+                    if(SelColumn > 0) SelColumn--;
                     break;
                 case ConsoleKey.RightArrow:
                     SelColumn++;
@@ -85,8 +78,7 @@ internal class Sheet {
                     return;
 
                 case ConsoleKey.Backspace:
-                    if(userInput.Length > 0)
-                        userInput = userInput[..^1];
+                    if(userInput.Length > 0) userInput = userInput[..^1];
                     break;
 
                 case ConsoleKey.Enter:
@@ -99,10 +91,8 @@ internal class Sheet {
 
                         cell.Value = userInput;
 
-                        string name = GetColumnName(SelColumn) + (SelRow + 1).ToString();
-                        foreach(Cell c in Cells) {
-                            if(c.Type == Cell.Types.Formula && c.Value.Contains(name)) c.Refresh();
-                        }
+                        string name = GetCellName(SelColumn, SelRow);
+                        CascadeUpdate(name);
 
                         userInput = "";
                     }
@@ -114,6 +104,19 @@ internal class Sheet {
                     break;
             }
         }
+    }
+
+    private void CascadeUpdate(string name) {
+        List<string> cellsToUpdate = [];
+        foreach(Cell c in Cells) {
+            if(c.Type == Cell.Types.Formula && c.Value.Contains(name)) {
+                c.Refresh();
+                string cName = GetCellName(c);
+                cellsToUpdate.Add(cName);
+            }
+        }
+
+        cellsToUpdate.ForEach(c => CascadeUpdate(c));
     }
 
     private void WriteLine(string text) {
@@ -225,6 +228,14 @@ internal class Sheet {
         } while(c >= 0);
 
         return sb.ToString();
+    }
+
+    internal string GetCellName(int col, int row) {
+        return GetColumnName(col) + (row + 1).ToString();
+    }
+
+    internal string GetCellName(Cell c) {
+         return GetCellName(c.Column, c.Row);
     }
 
     private (int Column, int Row) GetCellColRow(string name) {

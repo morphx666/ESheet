@@ -1,7 +1,4 @@
-﻿using ESheet.Classes;
-using System.Diagnostics;
-
-internal class Program {
+﻿internal class Program {
     private static Sheet sheet = new();
 
     private static void Main(string[] args) {

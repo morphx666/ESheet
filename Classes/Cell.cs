@@ -4,7 +4,7 @@ using System.Diagnostics;
 internal class Cell {
     private string value = "";
     private double valueEvaluated = 0;
-    private Sheet sheet;
+    private readonly Sheet sheet;
 
     public enum Types {
         Empty,
@@ -50,7 +50,7 @@ internal class Cell {
                         Alignment = Alignments.Right;
 
                         Eval.Formula = this.value;
-                        valueEvaluated = Evaluate();                        
+                        valueEvaluated = Evaluate();
                         break;
                     default:
                         UpdateType();
@@ -123,9 +123,20 @@ internal class Cell {
             try {
                 res = (double)Eval.Evaluate();
                 break;
-            } catch(ArgumentException ex) {
+            } catch(ArgumentException ex) when(ex.ParamName is not null) {
                 string name = ex.ParamName;
-                double value = sheet.GetCell(name).ValueEvaluated;
+                Cell? cell = sheet.GetCell(name);
+                if(cell == null) {
+                    //TODO: Do something here. Return 0?
+                    break;
+                }
+
+                if(cell.Type == Types.Label) {
+                    //TODO: Do something here, b/c we cannot have Label type cells as part of a formula
+                    //      Unless we add string manipulation functions??? hmmm...
+                    break;
+                }
+                double value = cell.ValueEvaluated;
                 Eval.CustomParameters.Add(name, value);
             }
         }

@@ -1,7 +1,4 @@
 ﻿using NCalc;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace ESheet.Classes {
     internal class Evaluator {
@@ -10,24 +7,24 @@ namespace ESheet.Classes {
 
         public delegate void CustomFunctionDel(string name, FunctionArgs args);
 
-        private string mFormula;
-        private readonly Dictionary<string, double> mCustomParameters = new Dictionary<string, double>();
-        private CustomFunctionDel mCustomFunction;
+        private string formula = "";
+        private readonly Dictionary<string, double> customParameters = new Dictionary<string, double>();
+        private CustomFunctionDel? customFunction;
 
-        private Expression exp;
+        private Expression? exp;
         private readonly Random rnd = new();
 
-        public CustomFunctionDel CustomFunctionHandler {
-            get { return mCustomFunction; }
-            set { mCustomFunction = value; }
+        public CustomFunctionDel? CustomFunctionHandler {
+            get { return customFunction; }
+            set { customFunction = value; }
         }
 
         public string Formula {
-            get { return mFormula; }
+            get { return formula; }
             set {
-                mFormula = value;
-                if(mFormula == "") mFormula = "0";
-                exp = new Expression(mFormula);
+                formula = value;
+                if(formula == "") formula = "0";
+                exp = new Expression(formula);
 
                 exp.EvaluateFunction += (name, args) => {
                     switch(name) {
@@ -58,7 +55,7 @@ namespace ESheet.Classes {
                             args.Result = Math.E;
                             break;
                         default:
-                            if(mCustomParameters.ContainsKey(name)) args.Result = mCustomParameters[name];
+                            if(customParameters.ContainsKey(name)) args.Result = customParameters[name];
                             break;
                     }
                 };
@@ -70,7 +67,7 @@ namespace ESheet.Classes {
         }
 
         public Dictionary<string, double> CustomParameters {
-            get { return mCustomParameters; }
+            get { return customParameters; }
         }
 
         public double Evaluate() {
