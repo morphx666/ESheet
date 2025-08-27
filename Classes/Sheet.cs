@@ -63,13 +63,15 @@ internal class Sheet {
 
             switch(ck.Key) {
                 case ConsoleKey.UpArrow:
-                    if(SelRow > 0) SelRow--;
+                    if(SelRow > 0)
+                        SelRow--;
                     break;
                 case ConsoleKey.DownArrow:
                     SelRow++;
                     break;
                 case ConsoleKey.LeftArrow:
-                    if(SelColumn > 0) SelColumn--;
+                    if(SelColumn > 0)
+                        SelColumn--;
                     break;
                 case ConsoleKey.RightArrow:
                     SelColumn++;
@@ -78,7 +80,8 @@ internal class Sheet {
                     return;
 
                 case ConsoleKey.Backspace:
-                    if(userInput.Length > 0) userInput = userInput[..^1];
+                    if(userInput.Length > 0)
+                        userInput = userInput[..^1];
                     break;
 
                 case ConsoleKey.Enter:
@@ -139,6 +142,28 @@ internal class Sheet {
         return GetCell(col, row);
     }
 
+    private void RenderHeaders() {
+        Console.SetCursorPosition(OffsetLeft, OffsetTop);
+        SetColors(ForeHeaderColor, BackHeaderColor);
+        Console.Write(AlignText(" ", RowWidth, Cell.Alignments.Left));
+
+        for(int r = 1; r < Console.WindowHeight - OffsetTop; r++) {
+            Console.SetCursorPosition(OffsetLeft, OffsetTop + r);
+            Console.Write(AlignText((r + StartRow).ToString(), RowWidth, Cell.Alignments.Left));
+        }
+
+        int c = 0;
+        while(true) {
+            int cc = SheetColumnToConsoleColumn(c);
+            Console.SetCursorPosition(OffsetLeft + cc, OffsetTop);
+            (string Text, bool Overflow) result = Trim(AlignText(GetColumnName(c + StartColumn), CellWidth, Cell.Alignments.Center), cc);
+            Console.Write(result.Text);
+
+            if(result.Overflow) break;
+            c++;
+        }
+    }
+
     private void RenderSheet() {
         int c = 0;
         int r = 0;
@@ -153,7 +178,7 @@ internal class Sheet {
                 SetColors(ForeCellColor, BackCellColor);
             }
 
-            Cell? cell = GetCell(c, r);
+            Cell? cell = GetCell(c + StartColumn, r + StartRow);
             if(cell == null) {
                 //if((c == SelColumn - StartColumn) && (r == SelRow - StartRow)) {
                 //    result = Trim(AlignText($"{c + StartColumn}:{r + StartRow}", CellWidth, Cell.Alignments.Center), cc);
@@ -181,29 +206,8 @@ internal class Sheet {
                     break;
             } else {
                 c++;
-            };
-        }
-    }
-
-    private void RenderHeaders() {
-        Console.SetCursorPosition(OffsetLeft, OffsetTop);
-        SetColors(ForeHeaderColor, BackHeaderColor);
-        Console.Write(AlignText(" ", RowWidth, Cell.Alignments.Left));
-
-        for(int r = 1; r < Console.WindowHeight - OffsetTop; r++) {
-            Console.SetCursorPosition(OffsetLeft, OffsetTop + r);
-            Console.Write(AlignText((r + StartRow).ToString(), RowWidth, Cell.Alignments.Left));
-        }
-
-        int c = 0;
-        while(true) {
-            int cc = SheetColumnToConsoleColumn(c);
-            Console.SetCursorPosition(OffsetLeft + cc, OffsetTop);
-            (string Text, bool Overflow) result = Trim(AlignText(GetColumnName(c + StartColumn), CellWidth, Cell.Alignments.Center), cc);
-            Console.Write(result.Text);
-
-            if(result.Overflow) break;
-            c++;
+            }
+            ;
         }
     }
 
@@ -235,7 +239,7 @@ internal class Sheet {
     }
 
     internal string GetCellName(Cell c) {
-         return GetCellName(c.Column, c.Row);
+        return GetCellName(c.Column, c.Row);
     }
 
     private (int Column, int Row) GetCellColRow(string name) {
