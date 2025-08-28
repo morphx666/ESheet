@@ -1,4 +1,5 @@
 ﻿using NCalc;
+using System.ComponentModel;
 using System.Diagnostics;
 
 namespace ESheet.Classes {
@@ -44,8 +45,12 @@ namespace ESheet.Classes {
                         case "Mod":
                             args.Result = (double)args.Parameters[0].Evaluate() % (double)args.Parameters[1].Evaluate();
                             break;
+
                         case "SUM":
                             args.Result = args.Parameters.Sum(p => (double)p.Evaluate());
+                            break;
+                        case "AVG":
+                            args.Result = args.Parameters.Average(p => (double)p.Evaluate());
                             break;
                     }
                 };
