@@ -8,7 +8,7 @@ namespace ESheet.Classes {
         public delegate void CustomFunctionDel(string name, FunctionArgs args);
 
         private string formula = "";
-        private readonly Dictionary<string, double> customParameters = new Dictionary<string, double>();
+        private readonly Dictionary<string, double> customParameters = [];
         private CustomFunctionDel? customFunction;
 
         private Expression? exp;
