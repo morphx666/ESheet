@@ -28,9 +28,11 @@ internal class Sheet {
     private readonly int ccCount = 'Z' - 'A' + 1; // 26
     private readonly string emptyCell;
     private string userInput = "";
+    private int editCursorPosition = 0;
 
     enum Modes {
         Default,
+        Edit,
         Formula,
         File
     }
@@ -38,9 +40,10 @@ internal class Sheet {
     private Modes WorkingMode = Modes.Default;
 
     private readonly Dictionary<string, (string Key, string Action)[]> helpMessages = new() {
-        { "default", new[] {("Arrows", "Move"), ("Enter", "Apply/Edit"), ("Delete", "Delete Cell"), ("=", "Formula Mode"), ("'", "Label Mode"), ("?", "File"), ("^Q", "Quit") } },
-        { "formula", new[] {("Arrows", "Select Cell"), ("Enter", "Add Cell to Formula"), ("Esc", "Exit Formula Mode") } },
-        { "file", new[] {("L", "Load Sheet"), ("S", "Save Sheet"), ("Esc", "Exit File Mode") } }
+        { "default", new[] { ("Arrows", "Move"), ("Enter", "Edit"), ("Delete", "Delete Cell"), ("=", "Formula Mode"), ("'", "Label Mode"), ("\\", "File"), ("^Q", "Quit") } },
+        { "edit", new[] { ("Enter", "Apply"), ("Esc", "Exit Edit Mode") } },
+        { "formula", new[] { ("Arrows", "Select Cell"), ("Enter", "Add Cell to Formula"), ("Esc", "Exit Formula Mode") } },
+        { "file", new[] { ("L", "Load Sheet"), ("S", "Save Sheet"), ("Esc", "Exit File Mode") } }
     };
 
     public Sheet() {
@@ -70,58 +73,34 @@ internal class Sheet {
     }
 
     public void Run() {
+        Cell? cell;
+
         while(true) {
             Render();
 
             Console.SetCursorPosition(0, 1);
             WriteLine(userInput);
-            Console.SetCursorPosition(userInput.Length, 1);
+            Console.SetCursorPosition(editCursorPosition, 1);
 
             ConsoleKeyInfo ck = Console.ReadKey(true);
 
             switch(WorkingMode) {
                 case Modes.Default:
-                case Modes.Formula:
                     switch(ck.Key) {
                         case ConsoleKey.UpArrow:
-                            if(WorkingMode == Modes.Formula) {
-                                if(SelFormulaRow > 0) SelFormulaRow--;
-                            } else
-                                if(SelRow > 0) SelRow--;
+                            if(SelRow > 0) SelRow--;
                             break;
 
                         case ConsoleKey.DownArrow:
-                            if(WorkingMode == Modes.Formula)
-                                SelFormulaRow++;
-                            else
-                                SelRow++;
+                            SelRow++;
                             break;
 
                         case ConsoleKey.LeftArrow:
-                            if(WorkingMode == Modes.Formula) {
-                                if(SelFormulaColumn > 0) SelFormulaColumn--;
-                            } else
-                                if(SelColumn > 0) SelColumn--;
+                            if(SelColumn > 0) SelColumn--;
                             break;
 
                         case ConsoleKey.RightArrow:
-                            if(WorkingMode == Modes.Formula)
-                                SelFormulaColumn++;
-                            else
-                                SelColumn++;
-                            break;
-
-                        case ConsoleKey.Escape:
-                            if(WorkingMode == Modes.Formula) {
-                                Cell? cell = GetCell(SelColumn, SelRow);
-                                if(cell == null) {
-                                    cell = new Cell(this, SelColumn, SelRow);
-                                    Cells.Add(cell);
-                                }
-                                cell.Value = userInput;
-                                userInput = "";
-                                WorkingMode = Modes.Default;
-                            }
+                            SelColumn++;
                             break;
 
                         case ConsoleKey.Q:
@@ -136,57 +115,136 @@ internal class Sheet {
                             break;
 
                         case ConsoleKey.Enter:
-                            if(WorkingMode == Modes.Formula) {
-                                string name = GetCellName(SelFormulaColumn, SelFormulaRow);
-                                userInput += name;
-                            } else {
-                                if(userInput.Length > 0) {
-                                    Cell? cell = GetCell(SelColumn, SelRow);
-                                    if(cell == null) {
-                                        cell = new Cell(this, SelColumn, SelRow);
-                                        Cells.Add(cell);
-                                    }
-
-                                    cell.Value = userInput;
-
-                                    string name = GetCellName(SelColumn, SelRow);
-                                    CascadeUpdate(name);
-
-                                    userInput = "";
-                                } else {
-                                    Cell? cell = GetCell(SelColumn, SelRow);
-                                    if(cell != null) {
-                                        userInput = cell.Value;
-                                    }
-                                }
+                            cell = GetCell(SelColumn, SelRow);
+                            if(cell != null) {
+                                userInput = cell.ValueFormat;
+                                editCursorPosition = userInput.Length;
+                                WorkingMode = Modes.Edit;
                             }
                             break;
 
                         case ConsoleKey.Delete:
-                            if(WorkingMode != Modes.Formula) {
-                                Cell? cell = GetCell(SelColumn, SelRow);
-                                if(cell != null) {
-                                    Cells.Remove(cell);
+                            cell = GetCell(SelColumn, SelRow);
+                            if(cell != null) {
+                                Cells.Remove(cell);
+                                string name = GetCellName(SelColumn, SelRow);
+                                CascadeUpdate(name);
+                            }
+                            break;
+
+                        case ConsoleKey.Oem5: // '\'
+                            WorkingMode = Modes.File;
+                            break;
+
+                        default:
+                            if(userInput.Length == 0 && ck.KeyChar == '=') {
+                                SelFormulaColumn = SelColumn;
+                                SelFormulaRow = SelRow;
+                                WorkingMode = Modes.Formula;
+                            } else {
+                                if(!char.IsAsciiLetterOrDigit(ck.KeyChar) && ck.KeyChar != '\'') break;
+                                WorkingMode = Modes.Edit;
+                            }
+                            if(userInput.Length < Console.WindowWidth - OffsetLeft - RowWidth)
+                                userInput += ck.KeyChar;
+                            editCursorPosition = userInput.Length;
+
+                            break;
+                    }
+                    break;
+
+                case Modes.Edit:
+                case Modes.Formula:
+                    switch(ck.Key) {
+                        case ConsoleKey.UpArrow:
+                            if(WorkingMode == Modes.Formula) {
+                                if(SelFormulaRow > 0) SelFormulaRow--;
+                            }
+                            break;
+
+                        case ConsoleKey.DownArrow:
+                            if(WorkingMode == Modes.Formula)
+                                SelFormulaRow++;
+                            break;
+
+                        case ConsoleKey.LeftArrow:
+                            if(WorkingMode == Modes.Formula) {
+                                if(SelFormulaColumn > 0) SelFormulaColumn--;
+                            } else {
+                                editCursorPosition = Math.Max(0, editCursorPosition - 1);
+                            }
+                            break;
+
+                        case ConsoleKey.RightArrow:
+                            if(WorkingMode == Modes.Formula) {
+                                SelFormulaColumn++;
+                            } else {
+                                editCursorPosition = Math.Min(userInput.Length, editCursorPosition + 1);
+                            }
+                            break;
+
+                        case ConsoleKey.Home:
+                            editCursorPosition = 0;
+                            break;
+
+                        case ConsoleKey.End:
+                            editCursorPosition = userInput.Length;
+                            break;
+
+                        case ConsoleKey.Enter:
+                            if(WorkingMode == Modes.Formula) {
+                                string name = GetCellName(SelFormulaColumn, SelFormulaRow);
+                                userInput = userInput[0..editCursorPosition] + name + userInput[editCursorPosition..];
+                                editCursorPosition += name.Length;
+                            } else {
+                                if(userInput.Length > 0) {
+                                    cell = GetCell(SelColumn, SelRow);
+                                    if(cell == null) {
+                                        cell = new Cell(this, SelColumn, SelRow);
+                                        Cells.Add(cell);
+                                    }
+                                    cell.Value = userInput;
                                     string name = GetCellName(SelColumn, SelRow);
                                     CascadeUpdate(name);
+                                    userInput = "";
+                                    editCursorPosition = 0;
+                                    WorkingMode = Modes.Default;
                                 }
                             }
                             break;
 
-                        case ConsoleKey.Oem2: // '?'
-                            if((WorkingMode == Modes.Default)) {
-                                WorkingMode = Modes.File;
+                        case ConsoleKey.Escape:
+                            if(WorkingMode == Modes.Formula) {
+                                cell = GetCell(SelColumn, SelRow);
+                                if(cell == null) {
+                                    cell = new Cell(this, SelColumn, SelRow);
+                                    Cells.Add(cell);
+                                }
+                                cell.Value = userInput;
+                            }
+                            userInput = "";
+                            editCursorPosition = 0;
+                            WorkingMode = Modes.Default;
+                            break;
+
+                        case ConsoleKey.Backspace:
+                            if(userInput.Length > 0) {
+                                editCursorPosition--;
+                                userInput = userInput[0..editCursorPosition] + userInput[(editCursorPosition + 1)..];
+                            }
+                            break;
+
+                        case ConsoleKey.Delete:
+                            if(editCursorPosition < userInput.Length) {
+                                userInput = userInput[0..editCursorPosition] + userInput[(editCursorPosition + 1)..];
                             }
                             break;
 
                         default:
-                            if((WorkingMode != Modes.Formula) && userInput.Length == 0 && ck.KeyChar == '=') {
-                                SelFormulaColumn = SelColumn;
-                                SelFormulaRow = SelRow;
-                                WorkingMode = Modes.Formula;
+                            if(userInput.Length < Console.WindowWidth - OffsetLeft - RowWidth) {
+                                userInput = userInput[0..editCursorPosition] + ck.KeyChar + userInput[editCursorPosition..];
+                                editCursorPosition++;
                             }
-                            if(userInput.Length < Console.WindowWidth - OffsetLeft - RowWidth)
-                                userInput += ck.KeyChar;
                             break;
                     }
                     break;
