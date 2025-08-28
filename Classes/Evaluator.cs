@@ -71,7 +71,7 @@ namespace ESheet.Classes {
         }
 
         public double Evaluate() {
-            return exp == null ? 0 : (double)exp.Evaluate();
+            return exp == null || formula == "0" ? 0 : (double)exp.Evaluate();
         }
     }
 }

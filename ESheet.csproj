@@ -5,12 +5,12 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyVersion>2025.8.28.300</AssemblyVersion>
-    <FileVersion>2025.8.28.300</FileVersion>
+    <AssemblyVersion>2025.8.28.316</AssemblyVersion>
+    <FileVersion>2025.8.28.316</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreCLR-NCalc" Version="2.2.112" />
+    <PackageReference Include="ncalc" Version="1.3.8" />
   </ItemGroup>
 
 </Project>

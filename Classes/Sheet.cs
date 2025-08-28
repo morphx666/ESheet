@@ -26,10 +26,19 @@ internal class Sheet {
     private readonly int ccCount = 'Z' - 'A' + 1; // 26
     private readonly string emptyCell;
     private string userInput = "";
-    private bool FormulaMode => userInput.StartsWith('=');
+
+    enum Modes {
+        Default,
+        Formula,
+        File
+    }
+
+    private Modes WorkingMode = Modes.Default;
+
     private readonly Dictionary<string, (string Key, string Action)[]> helpMessages = new() {
-        { "default", new[] {("Arrows", "Move"), ("Enter", "Apply"), ("Delete", "Delete Cell"), ("=", "Start Formula Mode"), ("'", "Start Label Mode") } },
-        { "formula", new[] {("Arrows", "Select Cell"), ("Enter", "Add Cell to Formula"), ("Esc", "Exit Formula Mode") } }
+        { "default", new[] {("Arrows", "Move"), ("Enter", "Apply"), ("Delete", "Delete Cell"), ("=", "Start Formula Mode"), ("'", "Start Label Mode"), ("?", "File Operations") } },
+        { "formula", new[] {("Arrows", "Select Cell"), ("Enter", "Add Cell to Formula"), ("Esc", "Exit Formula Mode") } },
+        { "file", new[] {("L", "Load Sheet"), ("S", "Save Sheet"), ("Esc", "Exit File Mode") } }
     };
 
     public Sheet() {
@@ -70,35 +79,35 @@ internal class Sheet {
 
             switch(ck.Key) {
                 case ConsoleKey.UpArrow:
-                    if(FormulaMode) {
+                    if(WorkingMode == Modes.Formula) {
                         if(SelFormulaRow > 0) SelFormulaRow--;
                     } else
                         if(SelRow > 0) SelRow--;
                     break;
 
                 case ConsoleKey.DownArrow:
-                    if(FormulaMode)
+                    if(WorkingMode == Modes.Formula)
                         SelFormulaRow++;
                     else
                         SelRow++;
                     break;
 
                 case ConsoleKey.LeftArrow:
-                    if(FormulaMode) {
+                    if(WorkingMode == Modes.Formula) {
                         if(SelFormulaColumn > 0) SelFormulaColumn--;
                     } else
                         if(SelColumn > 0) SelColumn--;
                     break;
 
                 case ConsoleKey.RightArrow:
-                    if(FormulaMode)
+                    if(WorkingMode == Modes.Formula)
                         SelFormulaColumn++;
                     else
                         SelColumn++;
                     break;
 
                 case ConsoleKey.Escape:
-                    if(FormulaMode) {
+                    if(WorkingMode == Modes.Formula) {
                         Cell? cell = GetCell(SelColumn, SelRow);
                         if(cell == null) {
                             cell = new Cell(this, SelColumn, SelRow);
@@ -107,6 +116,7 @@ internal class Sheet {
                         cell.Value = userInput;
                         userInput = "";
                     }
+                    WorkingMode = Modes.Default;
                     break;
 
                 case ConsoleKey.Backspace:
@@ -115,7 +125,7 @@ internal class Sheet {
                     break;
 
                 case ConsoleKey.Enter:
-                    if(FormulaMode) {
+                    if(WorkingMode == Modes.Formula) {
                         string name = GetCellName(SelFormulaColumn, SelFormulaRow);
                         userInput += name;
                     } else {
@@ -137,7 +147,7 @@ internal class Sheet {
                     break;
 
                 case ConsoleKey.Delete:
-                    if(!FormulaMode) {
+                    if(WorkingMode != Modes.Formula) {
                         Cell? cell = GetCell(SelColumn, SelRow);
                         if(cell != null) {
                             Cells.Remove(cell);
@@ -147,10 +157,17 @@ internal class Sheet {
                     }
                     break;
 
+                case ConsoleKey.Oem2: // '?'
+                    if((WorkingMode == Modes.Default)) {
+                        WorkingMode = Modes.File;
+                    }
+                    break;
+
                 default:
-                    if(!FormulaMode && userInput.Length == 0 && ck.KeyChar == '=') {
+                    if((WorkingMode != Modes.Formula) && userInput.Length == 0 && ck.KeyChar == '=') {
                         SelFormulaColumn = SelColumn;
                         SelFormulaRow = SelRow;
+                        WorkingMode = Modes.Formula;
                     }
                     if(userInput.Length < Console.WindowWidth - OffsetLeft - RowWidth)
                         userInput += ck.KeyChar;
@@ -194,7 +211,8 @@ internal class Sheet {
 
     private void RenderHeaders() {
         SetColors(ConsoleColor.DarkGray, BackCellColor);
-        RenderHelp(OffsetLeft, OffsetTop - 1, FormulaMode ? helpMessages["formula"] : helpMessages["default"]);
+
+        RenderHelp(OffsetLeft, OffsetTop - 1, helpMessages[WorkingMode.ToString().ToLower()]);
 
         SetColors(ForeHeaderColor, BackHeaderColor);
         Console.SetCursorPosition(OffsetLeft, OffsetTop);
@@ -229,6 +247,10 @@ internal class Sheet {
 
     private static void RenderHelp(int c, int r, (string Key, string Action)[] values) {
         Console.SetCursorPosition(c, r);
+        SetColors(ConsoleColor.Black, ConsoleColor.Black);
+        Console.Write(" ".PadLeft(Console.WindowWidth));
+        Console.SetCursorPosition(c, r);
+
         int count = values.Length;
         foreach((string Key, string Action) in values) {
             SetColors(ConsoleColor.DarkGray, ConsoleColor.Black);
@@ -261,7 +283,7 @@ internal class Sheet {
             if((c == SelColumn - StartColumn) && (r == SelRow - StartRow)) {
                 SetColors(ForeSelCellColor, BackSelCellColor);
             } else {
-                if(FormulaMode && c == SelFormulaColumn && r == SelFormulaRow) {
+                if((WorkingMode == Modes.Formula) && c == SelFormulaColumn && r == SelFormulaRow) {
                     SetColors(ConsoleColor.White, ConsoleColor.Red);
                 } else {
                     SetColors(ForeCellColor, BackCellColor);
