@@ -143,13 +143,9 @@ internal class Cell(Sheet sheet, int col, int row) {
             (int Column, int Row) end = sheet.GetCellColRow(endCell);
             string range = "";
 
-            if(start.Row == end.Row) {
+            for(int row = Math.Min(start.Row, end.Row); row <= Math.Max(start.Row, end.Row); row++) {
                 for(int col = Math.Min(start.Column, end.Column); col <= Math.Max(start.Column, end.Column); col++) {
-                    range += sheet.GetCellName(col, start.Row) + ",";
-                }
-            } else {
-                for(int row = Math.Min(start.Row, end.Row); row <= Math.Max(start.Row, end.Row); row++) {
-                    range += sheet.GetCellName(start.Column, row) + ",";
+                    range += sheet.GetCellName(col, row) + ",";
                 }
             }
             range = range.TrimEnd(',');
