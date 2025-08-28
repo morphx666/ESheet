@@ -189,19 +189,7 @@ internal class Sheet {
                 case Modes.File:
                     switch(ck.Key) {
                         case ConsoleKey.L:
-                            if(File.Exists(FileName)) {
-                                Cells.Clear();
-                                string[] lines = File.ReadAllLines(FileName);
-                                for(int r = 0; r < lines.Length; r++) {
-                                    string[] values = lines[r].Split(',');
-                                    for(int c = 0; c < values.Length; c++) {
-                                        if(values[c].Trim() != "") {
-                                            Cell cell = new(this, c, r, values[c]);
-                                            Cells.Add(cell);
-                                        }
-                                    }
-                                }
-                            }
+                            Load();
                             WorkingMode = Modes.Default;
                             break;
 
@@ -435,6 +423,22 @@ internal class Sheet {
     private static void SetColors(ConsoleColor fore, ConsoleColor back) {
         Console.ForegroundColor = fore;
         Console.BackgroundColor = back;
+    }
+
+    public void Load() {
+        if(File.Exists(FileName)) {
+            Cells.Clear();
+            string[] lines = File.ReadAllLines(FileName);
+            for(int r = 0; r < lines.Length; r++) {
+                string[] values = lines[r].Split(',');
+                for(int c = 0; c < values.Length; c++) {
+                    if(values[c].Trim() != "") {
+                        Cell cell = new(this, c, r, values[c]);
+                        Cells.Add(cell);
+                    }
+                }
+            }
+        }
     }
 
     public void Save() {

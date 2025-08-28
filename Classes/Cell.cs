@@ -1,10 +1,10 @@
 using ESheet.Classes;
 using System.Diagnostics;
 
-internal class Cell {
+internal class Cell(Sheet sheet, int col, int row) {
     private string value = "";
     private double valueEvaluated = 0;
-    private readonly Sheet sheet;
+    private readonly Sheet sheet = sheet;
 
     public enum Types {
         Empty,
@@ -21,8 +21,8 @@ internal class Cell {
 
     public Types Type { get; private set; }
 
-    public int Column { get; init; }
-    public int Row { get; init; }
+    public int Column { get; init; } = col;
+    public int Row { get; init; } = row;
 
     public ConsoleColor ForeColor { get; set; } = ConsoleColor.White;
     public ConsoleColor BackColor { get; set; } = ConsoleColor.Black;
@@ -82,12 +82,13 @@ internal class Cell {
         get => valueEvaluated;
     }
 
-    public Cell(Sheet sheet, int col, int row, string value = "", Alignments alignment = Alignments.Left) {
-        this.sheet = sheet;
-        this.Column = col;
-        this.Row = row;
+    public Cell(Sheet sheet, int col, int row, string value, Alignments alignment) : this(sheet, col, row) {
         this.Value = value.Trim();
         this.Alignment = alignment;
+    }
+
+    public Cell(Sheet sheet, int col, int row, string value) : this(sheet, col, row) {
+        this.Value = value.Trim();
     }
 
     private void UpdateType() {
