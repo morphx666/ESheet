@@ -1,5 +1,4 @@
 using ESheet.Classes;
-using System.Diagnostics;
 
 internal class Cell(Sheet sheet, int col, int row) {
     private string value = "";
@@ -49,7 +48,7 @@ internal class Cell(Sheet sheet, int col, int row) {
                         this.value = this.value[1..];
                         Alignment = Alignments.Right;
 
-                        Eval.Formula = this.value;
+                        Eval.Formula = ExpandRanges(this.value);
                         valueEvaluated = Evaluate();
                         break;
                     default:
@@ -99,7 +98,7 @@ internal class Cell(Sheet sheet, int col, int row) {
                 Type = Types.Number;
                 Alignment = Alignments.Right;
             } else {
-                Eval.Formula = value;
+                Eval.Formula = ExpandRanges(value);
                 try {
                     valueEvaluated = Evaluate();
                     Type = Types.Formula;
@@ -114,6 +113,50 @@ internal class Cell(Sheet sheet, int col, int row) {
 
     public void Refresh() {
         this.Value = this.value;
+    }
+
+    private string ExpandRanges(string formula) {
+        string rangeSeparator = "..";
+
+        while(formula.Contains(rangeSeparator)) {
+            int index = formula.IndexOf(rangeSeparator);
+
+            string startCell = "";
+            for(int i = index - 1; i >= 0; i--) {
+                if(char.IsAsciiLetterOrDigit(formula[i])) {
+                    startCell = formula[i] + startCell;
+                } else {
+                    break;
+                }
+            }
+
+            string endCell = "";
+            for(int i = index + rangeSeparator.Length; i < formula.Length; i++) {
+                if(char.IsAsciiLetterOrDigit(formula[i])) {
+                    endCell += formula[i];
+                } else {
+                    break;
+                }
+            }
+
+            (int Column, int Row) start = sheet.GetCellColRow(startCell);
+            (int Column, int Row) end = sheet.GetCellColRow(endCell);
+            string range = "";
+
+            if(start.Row == end.Row) {
+                for(int col = Math.Min(start.Column, end.Column); col <= Math.Max(start.Column, end.Column); col++) {
+                    range += sheet.GetCellName(col, start.Row) + ",";
+                }
+            } else {
+                for(int row = Math.Min(start.Row, end.Row); row <= Math.Max(start.Row, end.Row); row++) {
+                    range += sheet.GetCellName(start.Column, row) + ",";
+                }
+            }
+            range = range.TrimEnd(',');
+            formula = formula.Replace($"{startCell}..{endCell}", range);
+        }
+
+        return formula;
     }
 
     private double Evaluate() {

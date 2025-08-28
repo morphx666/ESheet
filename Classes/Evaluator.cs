@@ -1,4 +1,5 @@
 ﻿using NCalc;
+using System.Diagnostics;
 
 namespace ESheet.Classes {
     internal class Evaluator {
@@ -42,6 +43,9 @@ namespace ESheet.Classes {
                             break;
                         case "Mod":
                             args.Result = (double)args.Parameters[0].Evaluate() % (double)args.Parameters[1].Evaluate();
+                            break;
+                        case "SUM":
+                            args.Result = args.Parameters.Sum(p => (double)p.Evaluate());
                             break;
                     }
                 };
