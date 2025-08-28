@@ -5,11 +5,13 @@ internal class Sheet {
     public int StartRow { get; set; } = 0;
     public int SelColumn { get; set; } = 0;
     public int SelRow { get; set; } = 0;
+    public int SelFormulaColumn { get; set; } = 0;
+    public int SelFormulaRow { get; set; } = 0;
 
     public int OffsetLeft { get; set; } = 0;
     public int OffsetTop { get; set; } = 3;
 
-    public List<Cell> Cells { get; init; } = new();
+    public List<Cell> Cells { get; init; } = [];
     public int CellWidth { get; set; } = 15;
     public int RowWidth { get; set; } = 4;
 
@@ -17,11 +19,18 @@ internal class Sheet {
     public ConsoleColor BackCellColor { get; set; } = ConsoleColor.Black;
     public ConsoleColor ForeHeaderColor { get; set; } = ConsoleColor.Black;
     public ConsoleColor BackHeaderColor { get; set; } = ConsoleColor.Cyan;
+    public ConsoleColor BackHeaderSelColor { get; set; } = ConsoleColor.DarkCyan;
     public ConsoleColor ForeSelCellColor { get; set; } = ConsoleColor.White;
     public ConsoleColor BackSelCellColor { get; set; } = ConsoleColor.Blue;
 
     private readonly int ccCount = 'Z' - 'A' + 1; // 26
     private readonly string emptyCell;
+    private string userInput = "";
+    private bool FormulaMode => userInput.StartsWith('=');
+    private readonly Dictionary<string, (string Key, string Action)[]> helpMessages = new() {
+        { "default", new[] {("Arrows", "Move"), ("Enter", "Apply"), ("Delete", "Delete Cell"), ("=", "Start Formula Mode"), ("'", "Start Label Mode") } },
+        { "formula", new[] {("Arrows", "Select Cell"), ("Enter", "Add Cell to Formula"), ("Esc", "Exit Formula Mode") } }
+    };
 
     public Sheet() {
         emptyCell = AlignText(" ", CellWidth, Cell.Alignments.Left);
@@ -50,8 +59,6 @@ internal class Sheet {
     }
 
     public void Run() {
-        string userInput = "";
-
         while(true) {
             Render();
 
@@ -63,21 +70,44 @@ internal class Sheet {
 
             switch(ck.Key) {
                 case ConsoleKey.UpArrow:
-                    if(SelRow > 0)
-                        SelRow--;
+                    if(FormulaMode) {
+                        if(SelFormulaRow > 0) SelFormulaRow--;
+                    } else
+                        if(SelRow > 0) SelRow--;
                     break;
+
                 case ConsoleKey.DownArrow:
-                    SelRow++;
+                    if(FormulaMode)
+                        SelFormulaRow++;
+                    else
+                        SelRow++;
                     break;
+
                 case ConsoleKey.LeftArrow:
-                    if(SelColumn > 0)
-                        SelColumn--;
+                    if(FormulaMode) {
+                        if(SelFormulaColumn > 0) SelFormulaColumn--;
+                    } else
+                        if(SelColumn > 0) SelColumn--;
                     break;
+
                 case ConsoleKey.RightArrow:
-                    SelColumn++;
+                    if(FormulaMode)
+                        SelFormulaColumn++;
+                    else
+                        SelColumn++;
                     break;
+
                 case ConsoleKey.Escape:
-                    return;
+                    if(FormulaMode) {
+                        Cell? cell = GetCell(SelColumn, SelRow);
+                        if(cell == null) {
+                            cell = new Cell(this, SelColumn, SelRow);
+                            Cells.Add(cell);
+                        }
+                        cell.Value = userInput;
+                        userInput = "";
+                    }
+                    break;
 
                 case ConsoleKey.Backspace:
                     if(userInput.Length > 0)
@@ -85,23 +115,43 @@ internal class Sheet {
                     break;
 
                 case ConsoleKey.Enter:
-                    if(userInput.Length > 0) {
-                        Cell? cell = GetCell(SelColumn, SelRow);
-                        if(cell == null) {
-                            cell = new Cell(this, SelColumn, SelRow);
-                            Cells.Add(cell);
+                    if(FormulaMode) {
+                        string name = GetCellName(SelFormulaColumn, SelFormulaRow);
+                        userInput += name;
+                    } else {
+                        if(userInput.Length > 0) {
+                            Cell? cell = GetCell(SelColumn, SelRow);
+                            if(cell == null) {
+                                cell = new Cell(this, SelColumn, SelRow);
+                                Cells.Add(cell);
+                            }
+
+                            cell.Value = userInput;
+
+                            string name = GetCellName(SelColumn, SelRow);
+                            CascadeUpdate(name);
+
+                            userInput = "";
                         }
+                    }
+                    break;
 
-                        cell.Value = userInput;
-
-                        string name = GetCellName(SelColumn, SelRow);
-                        CascadeUpdate(name);
-
-                        userInput = "";
+                case ConsoleKey.Delete:
+                    if(!FormulaMode) {
+                        Cell? cell = GetCell(SelColumn, SelRow);
+                        if(cell != null) {
+                            Cells.Remove(cell);
+                            string name = GetCellName(SelColumn, SelRow);
+                            CascadeUpdate(name);
+                        }
                     }
                     break;
 
                 default:
+                    if(!FormulaMode && userInput.Length == 0 && ck.KeyChar == '=') {
+                        SelFormulaColumn = SelColumn;
+                        SelFormulaRow = SelRow;
+                    }
                     if(userInput.Length < Console.WindowWidth - OffsetLeft - RowWidth)
                         userInput += ck.KeyChar;
                     break;
@@ -143,17 +193,30 @@ internal class Sheet {
     }
 
     private void RenderHeaders() {
-        Console.SetCursorPosition(OffsetLeft, OffsetTop);
+        SetColors(ConsoleColor.DarkGray, BackCellColor);
+        RenderHelp(OffsetLeft, OffsetTop - 1, FormulaMode ? helpMessages["formula"] : helpMessages["default"]);
+
         SetColors(ForeHeaderColor, BackHeaderColor);
+        Console.SetCursorPosition(OffsetLeft, OffsetTop);
         Console.Write(AlignText(" ", RowWidth, Cell.Alignments.Left));
 
         for(int r = 1; r < Console.WindowHeight - OffsetTop; r++) {
+            if(r - 1 == SelRow - StartRow) {
+                SetColors(ForeHeaderColor, BackHeaderSelColor);
+            } else {
+                SetColors(ForeHeaderColor, BackHeaderColor);
+            }
             Console.SetCursorPosition(OffsetLeft, OffsetTop + r);
             Console.Write(AlignText((r + StartRow).ToString(), RowWidth, Cell.Alignments.Left));
         }
 
         int c = 0;
         while(true) {
+            if(c == SelColumn - StartColumn) {
+                SetColors(ForeHeaderColor, BackHeaderSelColor);
+            } else {
+                SetColors(ForeHeaderColor, BackHeaderColor);
+            }
             int cc = SheetColumnToConsoleColumn(c);
             Console.SetCursorPosition(OffsetLeft + cc, OffsetTop);
             (string Text, bool Overflow) result = Trim(AlignText(GetColumnName(c + StartColumn), CellWidth, Cell.Alignments.Center), cc);
@@ -161,6 +224,29 @@ internal class Sheet {
 
             if(result.Overflow) break;
             c++;
+        }
+    }
+
+    private static void RenderHelp(int c, int r, (string Key, string Action)[] values) {
+        Console.SetCursorPosition(c, r);
+        int count = values.Length;
+        foreach((string Key, string Action) in values) {
+            SetColors(ConsoleColor.DarkGray, ConsoleColor.Black);
+            Console.Write("[");
+
+            SetColors(ConsoleColor.DarkGreen, ConsoleColor.Black);
+            Console.Write($"{Key}");
+
+            SetColors(ConsoleColor.DarkGray, ConsoleColor.Black);
+            Console.Write("] ");
+
+            SetColors(ConsoleColor.DarkYellow, ConsoleColor.Black);
+            Console.Write($"{Action}");
+
+            if(--count > 0) {
+                SetColors(ConsoleColor.DarkGray, ConsoleColor.Black);
+                Console.Write(" | ");
+            }
         }
     }
 
@@ -175,7 +261,11 @@ internal class Sheet {
             if((c == SelColumn - StartColumn) && (r == SelRow - StartRow)) {
                 SetColors(ForeSelCellColor, BackSelCellColor);
             } else {
-                SetColors(ForeCellColor, BackCellColor);
+                if(FormulaMode && c == SelFormulaColumn && r == SelFormulaRow) {
+                    SetColors(ConsoleColor.White, ConsoleColor.Red);
+                } else {
+                    SetColors(ForeCellColor, BackCellColor);
+                }
             }
 
             Cell? cell = GetCell(c + StartColumn, r + StartRow);
@@ -263,7 +353,7 @@ internal class Sheet {
         return (c, int.Parse(rb) - 1);
     }
 
-    private string AlignText(string text, int width, Cell.Alignments alignment, int margin = 1) {
+    private static string AlignText(string text, int width, Cell.Alignments alignment, int margin = 1) {
         string sm = new(' ', margin);
 
         return alignment switch {
@@ -274,7 +364,7 @@ internal class Sheet {
         };
     }
 
-    private void SetColors(ConsoleColor fore, ConsoleColor back) {
+    private static void SetColors(ConsoleColor fore, ConsoleColor back) {
         Console.ForegroundColor = fore;
         Console.BackgroundColor = back;
     }
