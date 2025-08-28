@@ -38,7 +38,7 @@ internal class Sheet {
     private Modes WorkingMode = Modes.Default;
 
     private readonly Dictionary<string, (string Key, string Action)[]> helpMessages = new() {
-        { "default", new[] {("Arrows", "Move"), ("Enter", "Apply"), ("Delete", "Delete Cell"), ("=", "Formula Mode"), ("'", "Label Mode"), ("?", "File"), ("^Q", "Quit") } },
+        { "default", new[] {("Arrows", "Move"), ("Enter", "Apply/Edit"), ("Delete", "Delete Cell"), ("=", "Formula Mode"), ("'", "Label Mode"), ("?", "File"), ("^Q", "Quit") } },
         { "formula", new[] {("Arrows", "Select Cell"), ("Enter", "Add Cell to Formula"), ("Esc", "Exit Formula Mode") } },
         { "file", new[] {("L", "Load Sheet"), ("S", "Save Sheet"), ("Esc", "Exit File Mode") } }
     };
@@ -153,6 +153,11 @@ internal class Sheet {
                                     CascadeUpdate(name);
 
                                     userInput = "";
+                                } else {
+                                    Cell? cell = GetCell(SelColumn, SelRow);
+                                    if(cell != null) {
+                                        userInput = cell.Value;
+                                    }
                                 }
                             }
                             break;
