@@ -29,20 +29,20 @@ namespace ESheet.Classes {
                 exp = new Expression(formula);
 
                 exp.EvaluateFunction += (name, args) => {
-                    switch(name) {
-                        case "IIf":
+                    switch(name.ToUpper()) {
+                        case "IIF":
                             args.Result = (bool)args.Parameters[0].Evaluate() ? args.Parameters[1].Evaluate() : args.Parameters[2].Evaluate();
                             break;
-                        case "ToRad":
+                        case "TORAD":
                             args.Result = (double)args.Parameters[0].Evaluate() * ToRad;
                             break;
-                        case "Abs":
+                        case "ABS":
                             args.Result = Math.Abs((double)args.Parameters[0].Evaluate());
                             break;
-                        case "Rnd":
+                        case "RND":
                             args.Result = rnd.NextDouble() - 0.5;
                             break;
-                        case "Mod":
+                        case "MOD":
                             args.Result = (double)args.Parameters[0].Evaluate() % (double)args.Parameters[1].Evaluate();
                             break;
 

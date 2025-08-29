@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text;
 
 internal class Sheet {
@@ -24,7 +23,14 @@ internal class Sheet {
     public ConsoleColor ForeSelCellColor { get; set; } = ConsoleColor.White;
     public ConsoleColor BackSelCellColor { get; set; } = ConsoleColor.Blue;
 
-    public string FileName { get; set; } = "esheet.csv";
+    private string fileName = "esheet.csv";
+    public string FileName {
+        get => fileName;
+        set {
+            fileName = value;
+            Console.Title = $"ESheet - {fileName}";
+        }
+    }
 
     private readonly int ccCount = 'Z' - 'A' + 1; // 26
     private readonly string emptyCell;
@@ -53,29 +59,8 @@ internal class Sheet {
     };
 
     public Sheet() {
+        Console.Title = $"ESheet";
         emptyCell = AlignText(" ", CellWidth, Cell.Alignments.Left);
-    }
-
-    public void Render() {
-        if(SheetColumnToConsoleColumn(SelColumn - StartColumn) >= Console.WindowWidth - OffsetLeft)
-            StartColumn++;
-        if(SelColumn < StartColumn)
-            StartColumn--;
-        if((SelRow - StartRow) >= Console.WindowHeight - OffsetTop - 1)
-            StartRow++;
-        if(SelRow < StartRow)
-            StartRow--;
-
-        Console.CursorVisible = false;
-
-        RenderHeaders();
-        RenderSheet();
-
-        Console.SetCursorPosition(0, 0);
-        Console.Write($"{GetColumnName(SelColumn)}{SelRow + 1}: ");
-        WriteLine(GetCell(SelColumn, SelRow)?.ValueFormat ?? "");
-
-        Console.CursorVisible = true;
     }
 
     public void Run() {
@@ -181,7 +166,7 @@ internal class Sheet {
                             if(workingMode == Modes.Formula && isCtrl) {
                                 if(SelFormulaColumn > 0) SelFormulaColumn--;
                             } else {
-                                editCursorPosition = Math.Max(0, editCursorPosition - 1);
+                                editCursorPosition = Math.Max(1, editCursorPosition - 1);
                             }
                             break;
 
@@ -230,7 +215,7 @@ internal class Sheet {
                             break;
 
                         case ConsoleKey.Backspace:
-                            if(userInput.Length > 0) {
+                            if(userInput.Length > (userInput.Length > 0 ? (Char.IsAsciiLetterOrDigit(userInput[0]) ? 0 : 1) : 0)) {
                                 editCursorPosition--;
                                 userInput = userInput[0..editCursorPosition] + userInput[(editCursorPosition + 1)..];
                             }
@@ -276,7 +261,7 @@ internal class Sheet {
                             break;
 
                         case ConsoleKey.Backspace:
-                            if(userInput.Length > 0) {
+                            if(userInput.Length > (userInput.Length > 0 ? (Char.IsAsciiLetterOrDigit(userInput[0]) ? 0 : 1) : 0)) {
                                 editCursorPosition--;
                                 userInput = userInput[0..editCursorPosition] + userInput[(editCursorPosition + 1)..];
                             }
@@ -379,6 +364,61 @@ handleFileModeKeyStroke:
         return GetCell(col, row);
     }
 
+    public void Render() {
+        if(SheetColumnToConsoleColumn(SelColumn - StartColumn) >= Console.WindowWidth - OffsetLeft)
+            StartColumn++;
+        if(SelColumn < StartColumn)
+            StartColumn--;
+        if((SelRow - StartRow) >= Console.WindowHeight - OffsetTop - 1)
+            StartRow++;
+        if(SelRow < StartRow)
+            StartRow--;
+
+        Console.CursorVisible = false;
+
+        RenderHeaders();
+        RenderSheet();
+
+        SetColors(BackHeaderColor, BackCellColor);
+        Console.SetCursorPosition(0, 0);
+        Console.Write($"{GetColumnName(SelColumn)}{SelRow + 1}: ");
+
+        SetColors(ConsoleColor.White, ConsoleColor.Black);
+        WriteLine(GetCell(SelColumn, SelRow)?.ValueFormat ?? "");
+
+        Console.CursorVisible = true;
+    }
+
+    private static void RenderHelp(int c, int r, string title, (string Key, string Action)[] values) {
+        Console.SetCursorPosition(c, r);
+        SetColors(ConsoleColor.Black, ConsoleColor.Black);
+        Console.Write(" ".PadLeft(Console.WindowWidth));
+        Console.SetCursorPosition(c, r);
+
+        SetColors(ConsoleColor.Yellow, ConsoleColor.Black);
+        Console.Write($"{title}: ");
+
+        int count = values.Length;
+        foreach((string Key, string Action) in values) {
+            SetColors(ConsoleColor.DarkGray, ConsoleColor.Black);
+            Console.Write("[");
+
+            SetColors(ConsoleColor.DarkGreen, ConsoleColor.Black);
+            Console.Write($"{Key}");
+
+            SetColors(ConsoleColor.DarkGray, ConsoleColor.Black);
+            Console.Write("] ");
+
+            SetColors(ConsoleColor.DarkYellow, ConsoleColor.Black);
+            Console.Write($"{Action}");
+
+            if(--count > 0) {
+                SetColors(ConsoleColor.DarkGray, ConsoleColor.Black);
+                Console.Write(" | ");
+            }
+        }
+    }
+
     private void RenderHeaders() {
         SetColors(ConsoleColor.DarkGray, BackCellColor);
 
@@ -412,36 +452,6 @@ handleFileModeKeyStroke:
 
             if(result.Overflow) break;
             c++;
-        }
-    }
-
-    private static void RenderHelp(int c, int r, string title, (string Key, string Action)[] values) {
-        Console.SetCursorPosition(c, r);
-        SetColors(ConsoleColor.Black, ConsoleColor.Black);
-        Console.Write(" ".PadLeft(Console.WindowWidth));
-        Console.SetCursorPosition(c, r);
-
-        SetColors(ConsoleColor.Yellow, ConsoleColor.Black);
-        Console.Write($"{title}: ");
-
-        int count = values.Length;
-        foreach((string Key, string Action) in values) {
-            SetColors(ConsoleColor.DarkGray, ConsoleColor.Black);
-            Console.Write("[");
-
-            SetColors(ConsoleColor.DarkGreen, ConsoleColor.Black);
-            Console.Write($"{Key}");
-
-            SetColors(ConsoleColor.DarkGray, ConsoleColor.Black);
-            Console.Write("] ");
-
-            SetColors(ConsoleColor.DarkYellow, ConsoleColor.Black);
-            Console.Write($"{Action}");
-
-            if(--count > 0) {
-                SetColors(ConsoleColor.DarkGray, ConsoleColor.Black);
-                Console.Write(" | ");
-            }
         }
     }
 
