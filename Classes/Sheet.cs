@@ -138,12 +138,6 @@ internal class Sheet {
                             }
                             break;
 
-                        case ConsoleKey.None:
-                        case ConsoleKey.Oem5: // '\'
-                            if(ck.KeyChar != '\\') break;
-                            workingMode = Modes.File;
-                            break;
-
                         default:
                             if(userInput.Length == 0) {
                                 switch(ck.KeyChar) {
