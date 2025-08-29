@@ -118,6 +118,10 @@ internal partial class Sheet {
                                 userInput = cell.ValueFormat;
                                 editCursorPosition = userInput.Length;
                                 workingMode = cell.Type == Cell.Types.Formula ? Modes.Formula : Modes.Edit;
+                                if(workingMode == Modes.Formula) {
+                                    SelFormulaColumn = SelColumn;
+                                    SelFormulaRow = SelRow;
+                                }
                             }
                             break;
 
