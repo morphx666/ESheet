@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 
 internal class Sheet {
@@ -23,7 +24,7 @@ internal class Sheet {
     public ConsoleColor ForeSelCellColor { get; set; } = ConsoleColor.White;
     public ConsoleColor BackSelCellColor { get; set; } = ConsoleColor.Blue;
 
-    public string FileName { get; set; } = "sheet.csv";
+    public string FileName { get; set; } = "sample_sheet.csv";
 
     private readonly int ccCount = 'Z' - 'A' + 1; // 26
     private readonly string emptyCell;
@@ -375,24 +376,24 @@ internal class Sheet {
     }
 
     private void RenderSheet() {
-        int c = 0;
-        int r = 0;
+        int col = 0;
+        int row = 0;
         int cc;
         (string Text, bool Overflow) result;
 
         while(true) {
-            cc = SheetColumnToConsoleColumn(c);
-            if((c == SelColumn - StartColumn) && (r == SelRow - StartRow)) {
+            cc = SheetColumnToConsoleColumn(col);
+            if((col == SelColumn - StartColumn) && (row == SelRow - StartRow)) {
                 SetColors(ForeSelCellColor, BackSelCellColor);
             } else {
-                if((workingMode == Modes.Formula) && c == SelFormulaColumn && r == SelFormulaRow) {
+                if((workingMode == Modes.Formula) && col == SelFormulaColumn && row == SelFormulaRow) {
                     SetColors(ConsoleColor.White, ConsoleColor.Red);
                 } else {
                     SetColors(ForeCellColor, BackCellColor);
                 }
             }
 
-            Cell? cell = GetCell(c + StartColumn, r + StartRow);
+            Cell? cell = GetCell(col + StartColumn, row + StartRow);
             if(cell == null) {
                 //if((c == SelColumn - StartColumn) && (r == SelRow - StartRow)) {
                 //    result = Trim(AlignText($"{c + StartColumn}:{r + StartRow}", CellWidth, Cell.Alignments.Center), cc);
@@ -408,20 +409,38 @@ internal class Sheet {
                     value = cell.Value;
                 }
                 result = Trim(AlignText(value, Math.Max(value.Length, emptyCell.Length), cell.Alignment), cc);
+
+                if((col == SelColumn - StartColumn) && (row == SelRow - StartRow)) {
+                    foreach(Cell ac in cell.AffectedCells) {
+                        if(ac.Type == Cell.Types.Number || ac.Type == Cell.Types.Formula) {
+                            value = ac.ValueEvaluated.ToString("N2");
+                        } else {
+                            value = ac.Value;
+                        }
+                        string acResult = Trim(AlignText(value, Math.Max(value.Length, emptyCell.Length), cell.Alignment), cc).Text;
+
+                        ConsoleColor fc = Console.ForegroundColor;
+                        ConsoleColor bc = Console.BackgroundColor;
+
+                        SetColors(ForeSelCellColor, ConsoleColor.DarkGray);
+                        Console.SetCursorPosition(SheetColumnToConsoleColumn(ac.Column), OffsetTop + ac.Row + 1);
+                        Console.Write(acResult);
+
+                        SetColors(fc, bc);
+                    }
+                }
             }
 
-            Console.SetCursorPosition(OffsetLeft + cc, OffsetTop + r + 1);
+            Console.SetCursorPosition(OffsetLeft + cc, OffsetTop + row + 1);
             Console.Write(result.Text);
 
             if(result.Overflow) {
-                c = 0;
-                r++;
-                if(r == Console.WindowHeight - OffsetTop - 1)
-                    break;
+                col = 0;
+                row++;
+                if(row == Console.WindowHeight - OffsetTop - 1) break;
             } else {
-                c++;
+                col++;
             }
-            ;
         }
     }
 

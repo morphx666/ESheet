@@ -23,6 +23,8 @@ internal class Cell(Sheet sheet, int col, int row) {
     public int Column { get; init; } = col;
     public int Row { get; init; } = row;
 
+    public List<Cell> AffectedCells = [];
+
     public ConsoleColor ForeColor { get; set; } = ConsoleColor.White;
     public ConsoleColor BackColor { get; set; } = ConsoleColor.Black;
     public ConsoleColor ForeSelColor { get; set; } = ConsoleColor.Black;
@@ -153,10 +155,11 @@ internal class Cell(Sheet sheet, int col, int row) {
         }
 
         return formula;
-    }
+    }    
 
     private double Evaluate() {
         double res = 0;
+        AffectedCells.Clear();
 
         Eval.CustomParameters.Clear();
         while(true) {
@@ -178,6 +181,7 @@ internal class Cell(Sheet sheet, int col, int row) {
                 }
                 double value = cell.ValueEvaluated;
                 Eval.CustomParameters.Add(name, value);
+                AffectedCells.Add(cell);
             }
         }
 

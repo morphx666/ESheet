@@ -13,4 +13,10 @@
     <PackageReference Include="ncalc" Version="1.3.8" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="sample_sheet.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
