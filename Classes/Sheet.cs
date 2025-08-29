@@ -487,7 +487,7 @@ handleFileModeKeyStroke:
                 result = Trim(AlignText(value, Math.Max(value.Length, emptyCell.Length), cell.Alignment), cc);
 
                 if(workingMode != Modes.Formula && (col == SelColumn - StartColumn) && (row == SelRow - StartRow)) {
-                    foreach(Cell ac in cell.AffectedCells) {
+                    foreach(Cell ac in cell.DependentCells) {
                         // TODO: This is the same code as above... extract it as a method or anonymous function
                         if(ac.Type == Cell.Types.Number || ac.Type == Cell.Types.Formula) {
                             value = ac.ValueEvaluated.ToString("N2");
