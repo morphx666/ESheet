@@ -131,6 +131,20 @@ internal class Sheet {
                             }
                             break;
 
+                        case ConsoleKey.Home:
+                            SelColumn = 0;
+                            StartColumn = 0;
+                            SelRow = 0;
+                            StartRow = 0;
+                            break;
+
+                        case ConsoleKey.End:
+                            SelColumn = Cells.Count == 0 ? 0 : Cells.Max(c => c.Column);
+                            while(SheetColumnToConsoleColumn(SelColumn - StartColumn) >= Console.WindowWidth - OffsetLeft) StartColumn++;
+                            SelRow = Cells.Count == 0 ? 0 : Cells.Max(c => c.Row);
+                            while((SelRow - StartRow) >= Console.WindowHeight - OffsetTop - 1) StartRow++;
+                            break;
+
                         default:
                             if(userInput.Length == 0) {
                                 switch(ck.KeyChar) {
@@ -148,9 +162,11 @@ internal class Sheet {
                                         break;
                                 }
                             }
-                            if(userInput.Length < Console.WindowWidth - OffsetLeft - RowWidth)
-                                userInput += ck.KeyChar;
-                            editCursorPosition = userInput.Length;
+                            if(isCtrlChar(ck.KeyChar) || char.IsAsciiLetterOrDigit(ck.KeyChar)) {
+                                if(userInput.Length < Console.WindowWidth - OffsetLeft - RowWidth)
+                                    userInput += ck.KeyChar;
+                                editCursorPosition = userInput.Length;
+                            }
                             break;
                     }
                     break;
@@ -221,7 +237,7 @@ internal class Sheet {
                             break;
 
                         case ConsoleKey.Backspace:
-                            if(userInput.Length > (userInputHasCtrlChar() ? 1 : 0)) {
+                            if(userInput.Length > (userInputHasCtrlChar() ? 1 : 0) && editCursorPosition > 0) {
                                 editCursorPosition--;
                                 userInput = userInput[0..editCursorPosition] + userInput[(editCursorPosition + 1)..];
                             }
@@ -267,7 +283,7 @@ internal class Sheet {
                             break;
 
                         case ConsoleKey.Backspace:
-                            if(userInput.Length > (userInputHasCtrlChar() ? 1 : 0)) {
+                            if(userInput.Length > (userInputHasCtrlChar() ? 1 : 0) && editCursorPosition > 0) {
                                 editCursorPosition--;
                                 userInput = userInput[0..editCursorPosition] + userInput[(editCursorPosition + 1)..];
                             }
@@ -342,18 +358,16 @@ handleFileModeKeyStroke:
                     }
                     break;
             }
-
-
         }
     }
 
     private void CascadeUpdate(string name) {
         List<string> cellsToUpdate = [];
-        foreach(Cell c in Cells) {
+        foreach(Cell c in Cells.ToArray()) { // Silly way to create a copy of the Cells collection and avoid "Collection was modified" exception
             if(c.Type == Cell.Types.Formula && c.ExpandRanges(c.Value).Contains(name)) {
                 c.Refresh();
-                string cName = GetCellName(c);
-                cellsToUpdate.Add(cName);
+                string cellToUpdate = GetCellName(c);
+                cellsToUpdate.Add(cellToUpdate);
             }
         }
 
@@ -385,14 +399,10 @@ handleFileModeKeyStroke:
     }
 
     public void Render() {
-        if(SheetColumnToConsoleColumn(SelColumn - StartColumn) >= Console.WindowWidth - OffsetLeft)
-            StartColumn++;
-        if(SelColumn < StartColumn)
-            StartColumn--;
-        if((SelRow - StartRow) >= Console.WindowHeight - OffsetTop - 1)
-            StartRow++;
-        if(SelRow < StartRow)
-            StartRow--;
+        if(SheetColumnToConsoleColumn(SelColumn - StartColumn) >= Console.WindowWidth - OffsetLeft) StartColumn++;
+        if(SelColumn < StartColumn) StartColumn--;
+        if((SelRow - StartRow) >= Console.WindowHeight - OffsetTop - 1) StartRow++;
+        if(SelRow < StartRow) StartRow--;
 
         Console.CursorVisible = false;
 
@@ -603,6 +613,15 @@ handleFileModeKeyStroke:
             return (c, v - 1);
         } else {
             throw new ArgumentException("Invalid cell name", nameof(name));
+        }
+    }
+
+    internal (bool IsValid, int Column, int Row) IsCellNameValid(string name) {
+        try {
+            (int Column, int Row) = GetCellColRow(name);
+            return (true, Column, Row);
+        } catch {
+            return (false, -1, -1);
         }
     }
 

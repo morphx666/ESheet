@@ -1,5 +1,4 @@
 using ESheet.Classes;
-
 internal class Cell(Sheet sheet, int col, int row) {
     private string value = "";
     private double valueEvaluated = 0;
@@ -171,15 +170,21 @@ internal class Cell(Sheet sheet, int col, int row) {
                 string name = ex.ParamName;
                 Cell? cell = sheet.GetCell(name);
                 if(cell == null) {
-                    //TODO: Do something here. Return 0?
-                    break;
+                    (bool IsValid, int Column, int Row) = sheet.IsCellNameValid(name);
+                    if(IsValid) {
+                        cell = new(sheet, Column, Row) { Value = "" };
+                        sheet.Cells.Add(cell);
+                    } else { 
+                        throw new Exception($"Unrecognized expression '{name}'");
+                    }
                 }
 
-                if(cell.Type == Types.Label) {
-                    //TODO: Do something here, b/c we cannot have Label type cells as part of a formula
-                    //      Unless we add string manipulation functions??? hmmm...
-                    break;
-                }
+                //TODO: Do something here, b/c we cannot have Label type cells as part of a formula
+                //      Unless we add string manipulation functions??? hmmm...
+                //if(cell.Type == Types.Label) {
+                //    break;
+                //}
+
                 double value = cell.ValueEvaluated;
                 Eval.CustomParameters.Add(name, value);
                 DependentCells.Add(cell);

@@ -63,6 +63,9 @@ namespace ESheet.Classes {
                         case "E":
                             args.Result = Math.E;
                             break;
+                        case "C":
+                            args.Result = 299_792_458; // Speed of light in m/s
+                            break;
                         default:
                             if(customParameters.ContainsKey(name)) args.Result = customParameters[name];
                             break;
