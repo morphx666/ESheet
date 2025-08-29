@@ -119,6 +119,7 @@ internal class Cell(Sheet sheet, int col, int row) {
 
     private string ExpandRanges(string formula) {
         string rangeSeparator = "..";
+        formula = formula.Replace("%", "*1/100");
 
         while(formula.Contains(rangeSeparator)) {
             int index = formula.IndexOf(rangeSeparator);
@@ -164,6 +165,7 @@ internal class Cell(Sheet sheet, int col, int row) {
         Eval.CustomParameters.Clear();
         while(true) {
             try {
+                Eval.Formula = Eval.Formula;
                 res = (double)Eval.Evaluate();
                 break;
             } catch(ArgumentException ex) when(ex.ParamName is not null) {
