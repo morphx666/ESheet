@@ -24,7 +24,7 @@ internal class Sheet {
     public ConsoleColor ForeSelCellColor { get; set; } = ConsoleColor.White;
     public ConsoleColor BackSelCellColor { get; set; } = ConsoleColor.Blue;
 
-    public string FileName { get; set; } = "sample_sheet.csv";
+    public string FileName { get; set; } = "esheet.csv";
 
     private readonly int ccCount = 'Z' - 'A' + 1; // 26
     private readonly string emptyCell;
@@ -35,7 +35,9 @@ internal class Sheet {
         Default,
         Edit,
         Formula,
-        File
+        File,
+        FileLoad,
+        FileSave
     }
 
     private Modes workingMode = Modes.Default;
@@ -43,8 +45,11 @@ internal class Sheet {
     private readonly Dictionary<string, (string Key, string Action)[]> helpMessages = new() {
         { "default", new[] { ("Arrows", "Move"), ("Enter", "Edit"), ("Delete", "Delete Cell"), ("=", "Formula Mode"), ("'", "Label Mode"), ("\\", "File"), ("^Q", "Quit") } },
         { "edit", new[] { ("Enter", "Apply"), ("Esc", "Exit Edit Mode") } },
-        { "formula", new[] { ("Arrows", "Select Cell"), ("Enter", "Apply"), ("^Enter", "Add Cell to Formula"), ("Esc", "Abort Formula Mode") } },
-        { "file", new[] { ("L", "Load Sheet"), ("S", "Save Sheet"), ("Esc", "Exit File Mode") } }
+        { "formula", new[] { ("Arrows", "Select Cell"), ("Enter", "Apply"), ("^Enter", "Add Cell to Formula"), ("Esc", "Exit Formula Mode") } },
+        { "file", new[] { ("L", "Load Sheet"), ("S", "Save Sheet"), ("Esc", "Exit File Mode") } },
+        { "fileload", new[] { ("Enter", "Load"), ("Esc", "Cancel Load") } },
+        { "filesave", new[] { ("Enter", "Save"), ("Esc", "Cancel Save") } }
+
     };
 
     public Sheet() {
@@ -84,6 +89,8 @@ internal class Sheet {
             Console.SetCursorPosition(editCursorPosition, 1);
 
             ConsoleKeyInfo ck = Console.ReadKey(true);
+
+            // FIXME: There has to be a way to simplify this mess!
 
             switch(workingMode) {
                 case Modes.Default:
@@ -245,19 +252,90 @@ internal class Sheet {
                     break;
 
                 case Modes.File:
+                case Modes.FileLoad:
+                case Modes.FileSave:
                     switch(ck.Key) {
+                        case ConsoleKey.LeftArrow:
+                            if(workingMode == Modes.FileLoad || workingMode == Modes.FileSave) {
+                                editCursorPosition = Math.Max(0, editCursorPosition - 1);
+                            }
+                            break;
+
+                        case ConsoleKey.RightArrow:
+                            if(workingMode == Modes.FileLoad || workingMode == Modes.FileSave) {
+                                editCursorPosition = Math.Min(userInput.Length, editCursorPosition + 1);
+                            }
+                            break;
+
+                        case ConsoleKey.Home:
+                            editCursorPosition = 0;
+                            break;
+
+                        case ConsoleKey.End:
+                            editCursorPosition = userInput.Length;
+                            break;
+
+                        case ConsoleKey.Backspace:
+                            if(userInput.Length > 0) {
+                                editCursorPosition--;
+                                userInput = userInput[0..editCursorPosition] + userInput[(editCursorPosition + 1)..];
+                            }
+                            break;
+
+                        case ConsoleKey.Delete:
+                            if(editCursorPosition < userInput.Length) {
+                                userInput = userInput[0..editCursorPosition] + userInput[(editCursorPosition + 1)..];
+                            }
+                            break;
+
                         case ConsoleKey.L:
-                            Load();
-                            workingMode = Modes.Default;
+                            if(workingMode == Modes.File) {
+                                workingMode = Modes.FileLoad;
+                                userInput = FileName;
+                                editCursorPosition = userInput.Length;
+                            } else goto handleKeyStroke;
                             break;
 
                         case ConsoleKey.S:
-                            Save();
-                            workingMode = Modes.Default;
+                            if(workingMode == Modes.File) {
+                                workingMode = Modes.FileSave;
+                                userInput = FileName;
+                                editCursorPosition = userInput.Length;
+                            } else goto handleKeyStroke;
+                            break;
+
+                        case ConsoleKey.Enter:
+                            switch(workingMode) {
+                                case Modes.FileLoad:
+                                    if(LoadFile(userInput)) {
+                                        workingMode = Modes.Default;
+                                        userInput = "";
+                                        editCursorPosition = 0;
+                                    }
+                                    break;
+
+                                case Modes.FileSave:
+                                    if(SaveFile(userInput)) {
+                                        workingMode = Modes.Default;
+                                        userInput = "";
+                                        editCursorPosition = 0;
+                                    }
+                                    break;
+                            }
                             break;
 
                         case ConsoleKey.Escape:
                             workingMode = Modes.Default;
+                            userInput = "";
+                            editCursorPosition = 0;
+                            break;
+
+                        default:
+                        handleKeyStroke:
+                            if((workingMode == Modes.FileLoad || workingMode == Modes.FileSave) && userInput.Length < Console.WindowWidth - OffsetLeft - RowWidth) {
+                                userInput = userInput[0..editCursorPosition] + ck.KeyChar + userInput[editCursorPosition..];
+                                editCursorPosition++;
+                            }
                             break;
 
                     }
@@ -505,10 +583,10 @@ internal class Sheet {
         Console.BackgroundColor = back;
     }
 
-    public void Load() {
-        if(File.Exists(FileName)) {
+    public bool LoadFile(string fileName) {
+        if(File.Exists(fileName)) {
             Cells.Clear();
-            string[] lines = File.ReadAllLines(FileName);
+            string[] lines = File.ReadAllLines(fileName);
             for(int r = 0; r < lines.Length; r++) {
                 string[] values = lines[r].Split(',');
                 for(int c = 0; c < values.Length; c++) {
@@ -518,11 +596,14 @@ internal class Sheet {
                     }
                 }
             }
+            FileName = fileName;
+            return true;
         }
+        return false;
     }
 
-    public void Save() {
-        if(FileName == "") return;
+    public bool SaveFile(string fileName) {
+        if(fileName == "") return false;
         StringBuilder sb = new();
 
         int maxColumn = Cells.Max(c => c.Column);
@@ -541,6 +622,9 @@ internal class Sheet {
             sb.AppendLine();
         }
 
-        File.WriteAllText(FileName, sb.ToString());
+        File.WriteAllText(fileName, sb.ToString());
+        FileName = fileName;
+
+        return true;
     }
 }
