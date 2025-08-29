@@ -49,7 +49,7 @@ internal class Sheet {
     private Modes workingMode = Modes.Default;
 
     private readonly Dictionary<string, (string Key, string Action)[]> helpMessages = new() {
-        { "default", new[] { ("Arrows", "Move"), ("Enter", "Edit"), ("Delete", "Delete Cell"), ("=", "Formula Mode"), ("'", "Label Mode"), ("\\", "File"), ("^Q", "Quit") } },
+        { "default", new[] { ("Arrows", "Move"), ("Enter", "Edit"), ("Delete", "Delete"), ("=", "Formula"), ("'", "Label"), ("\\", "File"), ("^Q", "Quit") } },
         { "edit", new[] { ("Enter", "Apply"), ("Esc", "Exit Edit Mode") } },
         { "formula", new[] { ("^Arrows", "Select Cell"), ("Enter", "Apply"), ("^Enter", "Add Cell to Formula"), ("Esc", "Exit Formula Mode") } },
         { "file", new[] { ("L", "Load Sheet"), ("S", "Save Sheet"), ("Esc", "Exit File Mode") } },
@@ -97,7 +97,7 @@ internal class Sheet {
                             break;
 
                         case ConsoleKey.Q:
-                            if(isCtrl)return;
+                            if(isCtrl) return;
                             break;
 
                         case ConsoleKey.Backspace:
@@ -166,7 +166,7 @@ internal class Sheet {
                             if(workingMode == Modes.Formula && isCtrl) {
                                 if(SelFormulaColumn > 0) SelFormulaColumn--;
                             } else {
-                                editCursorPosition = Math.Max(1, editCursorPosition - 1);
+                                editCursorPosition = Math.Max(workingMode == Modes.Formula ? 1 : 0, editCursorPosition - 1);
                             }
                             break;
 
@@ -191,20 +191,18 @@ internal class Sheet {
                                 string name = GetCellName(SelFormulaColumn, SelFormulaRow);
                                 userInput = userInput[0..editCursorPosition] + name + userInput[editCursorPosition..];
                                 editCursorPosition += name.Length;
-                            } else {
-                                if(userInput.Length > 0) {
-                                    cell = GetCell(SelColumn, SelRow);
-                                    if(cell == null) {
-                                        cell = new Cell(this, SelColumn, SelRow);
-                                        Cells.Add(cell);
-                                    }
-                                    cell.Value = userInput;
-                                    string name = GetCellName(SelColumn, SelRow);
-                                    CascadeUpdate(name);
-                                    userInput = "";
-                                    editCursorPosition = 0;
-                                    workingMode = Modes.Default;
+                            } else if(userInput.Length > 0) {
+                                cell = GetCell(SelColumn, SelRow);
+                                if(cell == null) {
+                                    cell = new Cell(this, SelColumn, SelRow);
+                                    Cells.Add(cell);
                                 }
+                                cell.Value = userInput;
+                                string name = GetCellName(SelColumn, SelRow);
+                                CascadeUpdate(name);
+                                userInput = "";
+                                editCursorPosition = 0;
+                                workingMode = Modes.Default;
                             }
                             break;
 
@@ -334,7 +332,7 @@ handleFileModeKeyStroke:
     private void CascadeUpdate(string name) {
         List<string> cellsToUpdate = [];
         foreach(Cell c in Cells) {
-            if(c.Type == Cell.Types.Formula && c.Value.Contains(name)) {
+            if(c.Type == Cell.Types.Formula && c.ExpandRanges(c.Value).Contains(name)) {
                 c.Refresh();
                 string cName = GetCellName(c);
                 cellsToUpdate.Add(cName);
@@ -598,6 +596,12 @@ handleFileModeKeyStroke:
         Console.BackgroundColor = back;
     }
 
+    private void FullRefresh() {
+        Cells.ForEach(c => {
+            if(c.Type == Cell.Types.Formula) c.Refresh();
+        });
+    }
+
     public bool LoadFile(string fileName) {
         if(File.Exists(fileName)) {
             Cells.Clear();
@@ -612,11 +616,7 @@ handleFileModeKeyStroke:
                 }
             }
 
-            Cells.ForEach(c => {
-                if(c.Type == Cell.Types.Formula) {
-                    c.Refresh();
-                }
-            });
+            FullRefresh();
 
             FileName = fileName;
             return true;

@@ -117,7 +117,7 @@ internal class Cell(Sheet sheet, int col, int row) {
         this.Value = this.value;
     }
 
-    private string ExpandRanges(string formula) {
+    internal string ExpandRanges(string formula) {
         string rangeSeparator = "..";
         formula = formula.Replace("%", "*1/100");
 
