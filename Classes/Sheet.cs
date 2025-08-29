@@ -45,7 +45,7 @@ internal class Sheet {
     private readonly Dictionary<string, (string Key, string Action)[]> helpMessages = new() {
         { "default", new[] { ("Arrows", "Move"), ("Enter", "Edit"), ("Delete", "Delete Cell"), ("=", "Formula Mode"), ("'", "Label Mode"), ("\\", "File"), ("^Q", "Quit") } },
         { "edit", new[] { ("Enter", "Apply"), ("Esc", "Exit Edit Mode") } },
-        { "formula", new[] { ("Arrows", "Select Cell"), ("Enter", "Apply"), ("^Enter", "Add Cell to Formula"), ("Esc", "Exit Formula Mode") } },
+        { "formula", new[] { ("^Arrows", "Select Cell"), ("Enter", "Apply"), ("^Enter", "Add Cell to Formula"), ("Esc", "Exit Formula Mode") } },
         { "file", new[] { ("L", "Load Sheet"), ("S", "Save Sheet"), ("Esc", "Exit File Mode") } },
         { "fileload", new[] { ("Enter", "Load"), ("Esc", "Cancel Load") } },
         { "filesave", new[] { ("Enter", "Save"), ("Esc", "Cancel Save") } }
@@ -91,6 +91,7 @@ internal class Sheet {
             ConsoleKeyInfo ck = Console.ReadKey(true);
 
             // FIXME: There has to be a way to simplify this mess!
+            bool isCtrl = (ck.Modifiers & ConsoleModifiers.Control) == ConsoleModifiers.Control;
             switch(workingMode) {
                 case Modes.Default:
                     switch(ck.Key) {
@@ -111,9 +112,7 @@ internal class Sheet {
                             break;
 
                         case ConsoleKey.Q:
-                            if((ck.Modifiers & ConsoleModifiers.Control) == ConsoleModifiers.Control) {
-                                return;
-                            }
+                            if(isCtrl)return;
                             break;
 
                         case ConsoleKey.Backspace:
@@ -173,18 +172,19 @@ internal class Sheet {
                 case Modes.Formula:
                     switch(ck.Key) {
                         case ConsoleKey.UpArrow:
-                            if(workingMode == Modes.Formula) {
+                            if(workingMode == Modes.Formula && isCtrl) {
                                 if(SelFormulaRow > 0) SelFormulaRow--;
                             }
                             break;
 
                         case ConsoleKey.DownArrow:
-                            if(workingMode == Modes.Formula)
+                            if(workingMode == Modes.Formula && isCtrl) {
                                 SelFormulaRow++;
+                            }
                             break;
 
                         case ConsoleKey.LeftArrow:
-                            if(workingMode == Modes.Formula) {
+                            if(workingMode == Modes.Formula && isCtrl) {
                                 if(SelFormulaColumn > 0) SelFormulaColumn--;
                             } else {
                                 editCursorPosition = Math.Max(0, editCursorPosition - 1);
@@ -192,7 +192,7 @@ internal class Sheet {
                             break;
 
                         case ConsoleKey.RightArrow:
-                            if(workingMode == Modes.Formula) {
+                            if(workingMode == Modes.Formula && isCtrl) {
                                 SelFormulaColumn++;
                             } else {
                                 editCursorPosition = Math.Min(userInput.Length, editCursorPosition + 1);
@@ -208,7 +208,7 @@ internal class Sheet {
                             break;
 
                         case ConsoleKey.Enter:
-                            if(workingMode == Modes.Formula && (ck.Modifiers & ConsoleModifiers.Control) == ConsoleModifiers.Control) {
+                            if(workingMode == Modes.Formula && isCtrl) {
                                 string name = GetCellName(SelFormulaColumn, SelFormulaRow);
                                 userInput = userInput[0..editCursorPosition] + name + userInput[editCursorPosition..];
                                 editCursorPosition += name.Length;
