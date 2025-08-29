@@ -31,19 +31,19 @@ namespace ESheet.Classes {
                 exp.EvaluateFunction += (name, args) => {
                     switch(name.ToUpper()) {
                         case "IIF":
-                            args.Result = (bool)args.Parameters[0].Evaluate() ? args.Parameters[1].Evaluate() : args.Parameters[2].Evaluate();
+                            args.Result = Convert.ToBoolean(args.Parameters[0].Evaluate()) ? args.Parameters[1].Evaluate() : args.Parameters[2].Evaluate();
                             break;
                         case "TORAD":
-                            args.Result = (double)args.Parameters[0].Evaluate() * ToRad;
+                            args.Result = Convert.ToDouble(args.Parameters[0].Evaluate()) * ToRad;
                             break;
                         case "ABS":
-                            args.Result = Math.Abs((double)args.Parameters[0].Evaluate());
+                            args.Result = Math.Abs(Convert.ToDouble(args.Parameters[0].Evaluate()));
                             break;
                         case "RND":
                             args.Result = rnd.NextDouble() - 0.5;
                             break;
                         case "MOD":
-                            args.Result = (double)args.Parameters[0].Evaluate() % (double)args.Parameters[1].Evaluate();
+                            args.Result = Convert.ToDouble(args.Parameters[0].Evaluate()) % Convert.ToDouble(args.Parameters[1].Evaluate());
                             break;
 
                         case "SUM":
@@ -56,11 +56,11 @@ namespace ESheet.Classes {
                 };
 
                 exp.EvaluateParameter += (name, args) => {
-                    switch(name) {
-                        case "Pi":
+                    switch(name.ToUpper()) {
+                        case "PI":
                             args.Result = Math.PI;
                             break;
-                        case "e":
+                        case "E":
                             args.Result = Math.E;
                             break;
                         default:
@@ -80,7 +80,7 @@ namespace ESheet.Classes {
         }
 
         public double Evaluate() {
-            return exp == null || formula == "0" ? 0 : (double)exp.Evaluate();
+            return exp == null || formula == "0" ? 0 : Convert.ToDouble(exp.Evaluate());
         }
     }
 }

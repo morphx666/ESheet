@@ -1,3 +1,4 @@
+using NCalc.Domain;
 using System.Text;
 
 internal class Sheet {
@@ -52,10 +53,9 @@ internal class Sheet {
         { "default", new[] { ("Arrows", "Move"), ("Enter", "Edit"), ("Delete", "Delete"), ("=", "Formula"), ("'", "Label"), ("\\", "File"), ("^Q", "Quit") } },
         { "edit", new[] { ("Enter", "Apply"), ("Esc", "Exit Edit Mode") } },
         { "formula", new[] { ("^Arrows", "Select Cell"), ("Enter", "Apply"), ("^Enter", "Add Cell to Formula"), ("Esc", "Exit Formula Mode") } },
-        { "file", new[] { ("L", "Load Sheet"), ("S", "Save Sheet"), ("Esc", "Exit File Mode") } },
+        { "file", new[] { ("N", "New Sheet"), ("L", "Load Sheet"), ("S", "Save Sheet"), ("Esc", "Exit File Mode") } },
         { "fileload", new[] { ("Enter", "Load"), ("Esc", "Cancel Load") } },
         { "filesave", new[] { ("Enter", "Save"), ("Esc", "Cancel Save") } }
-
     };
 
     public Sheet() {
@@ -65,6 +65,14 @@ internal class Sheet {
 
     public void Run() {
         Cell? cell;
+
+        Func<char, bool> isCtrlChar = (char c) => {
+            return (c == '\'' || c == '=' || c == '\\');
+        };
+
+        Func<bool> userInputHasCtrlChar = () => {
+            return userInput.Length > 0 && isCtrlChar(userInput[0]);
+        };
 
         while(true) {
             Render();
@@ -134,8 +142,8 @@ internal class Sheet {
                                     case '\\':
                                         workingMode = Modes.File;
                                         break;
+                                    case '\'':
                                     default:
-                                        if(!char.IsAsciiLetterOrDigit(ck.KeyChar) && ck.KeyChar != '\'') break;
                                         workingMode = Modes.Edit;
                                         break;
                                 }
@@ -213,7 +221,7 @@ internal class Sheet {
                             break;
 
                         case ConsoleKey.Backspace:
-                            if(userInput.Length > (userInput.Length > 0 ? (Char.IsAsciiLetterOrDigit(userInput[0]) ? 0 : 1) : 0)) {
+                            if(userInput.Length > (userInputHasCtrlChar() ? 1 : 0)) {
                                 editCursorPosition--;
                                 userInput = userInput[0..editCursorPosition] + userInput[(editCursorPosition + 1)..];
                             }
@@ -259,7 +267,7 @@ internal class Sheet {
                             break;
 
                         case ConsoleKey.Backspace:
-                            if(userInput.Length > (userInput.Length > 0 ? (Char.IsAsciiLetterOrDigit(userInput[0]) ? 0 : 1) : 0)) {
+                            if(userInput.Length > (userInputHasCtrlChar() ? 1 : 0)) {
                                 editCursorPosition--;
                                 userInput = userInput[0..editCursorPosition] + userInput[(editCursorPosition + 1)..];
                             }
@@ -269,6 +277,16 @@ internal class Sheet {
                             if(editCursorPosition < userInput.Length) {
                                 userInput = userInput[0..editCursorPosition] + userInput[(editCursorPosition + 1)..];
                             }
+                            break;
+
+                        case ConsoleKey.N:
+                            if(workingMode == Modes.File) {
+                                Cells.Clear();
+                                FileName = "esheet.csv";
+                                userInput = "";
+                                editCursorPosition = 0;
+                                workingMode = Modes.Default;
+                            } else goto handleFileModeKeyStroke;
                             break;
 
                         case ConsoleKey.L:
@@ -358,8 +376,12 @@ handleFileModeKeyStroke:
     }
 
     internal Cell? GetCell(string name) {
-        (int col, int row) = GetCellColRow(name);
-        return GetCell(col, row);
+        try {
+            (int col, int row) = GetCellColRow(name);
+            return GetCell(col, row);
+        } catch {
+            return null;
+        }
     }
 
     public void Render() {
@@ -577,7 +599,11 @@ handleFileModeKeyStroke:
             }
         }
 
-        return (c, int.Parse(rb) - 1);
+        if(int.TryParse(rb, out int v)) {
+            return (c, v - 1);
+        } else {
+            throw new ArgumentException("Invalid cell name", nameof(name));
+        }
     }
 
     private static string AlignText(string text, int width, Cell.Alignments alignment, int margin = 1) {
