@@ -43,7 +43,7 @@ internal class Sheet {
     private readonly Dictionary<string, (string Key, string Action)[]> helpMessages = new() {
         { "default", new[] { ("Arrows", "Move"), ("Enter", "Edit"), ("Delete", "Delete Cell"), ("=", "Formula Mode"), ("'", "Label Mode"), ("\\", "File"), ("^Q", "Quit") } },
         { "edit", new[] { ("Enter", "Apply"), ("Esc", "Exit Edit Mode") } },
-        { "formula", new[] { ("Arrows", "Select Cell"), ("Enter", "Add Cell to Formula"), ("Esc", "Exit Formula Mode") } },
+        { "formula", new[] { ("Arrows", "Select Cell"), ("Enter", "Apply"), ("^Enter", "Add Cell to Formula"), ("Esc", "Exit Formula Mode") } },
         { "file", new[] { ("L", "Load Sheet"), ("S", "Save Sheet"), ("Esc", "Exit File Mode") } }
     };
 
@@ -195,7 +195,7 @@ internal class Sheet {
                             break;
 
                         case ConsoleKey.Enter:
-                            if(workingMode == Modes.Formula) {
+                            if(workingMode == Modes.Formula && (ck.Modifiers & ConsoleModifiers.Control) == ConsoleModifiers.Control) {
                                 string name = GetCellName(SelFormulaColumn, SelFormulaRow);
                                 userInput = userInput[0..editCursorPosition] + name + userInput[editCursorPosition..];
                                 editCursorPosition += name.Length;
@@ -410,8 +410,9 @@ internal class Sheet {
                 }
                 result = Trim(AlignText(value, Math.Max(value.Length, emptyCell.Length), cell.Alignment), cc);
 
-                if((col == SelColumn - StartColumn) && (row == SelRow - StartRow)) {
+                if(workingMode != Modes.Formula && (col == SelColumn - StartColumn) && (row == SelRow - StartRow)) {
                     foreach(Cell ac in cell.AffectedCells) {
+                        // TODO: This is the same code as above... extract it as a method or anonymous function
                         if(ac.Type == Cell.Types.Number || ac.Type == Cell.Types.Formula) {
                             value = ac.ValueEvaluated.ToString("N2");
                         } else {
@@ -422,7 +423,7 @@ internal class Sheet {
                         ConsoleColor fc = Console.ForegroundColor;
                         ConsoleColor bc = Console.BackgroundColor;
 
-                        SetColors(ForeSelCellColor, ConsoleColor.DarkGray);
+                        SetColors(fc, ConsoleColor.DarkGray);
                         Console.SetCursorPosition(SheetColumnToConsoleColumn(ac.Column), OffsetTop + ac.Row + 1);
                         Console.Write(acResult);
 

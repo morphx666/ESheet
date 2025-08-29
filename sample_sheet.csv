@@ -5,5 +5,5 @@
 ,,
 ,,
 ,,
-,,'Total
-,,=SUM(C2..C3)
+,,'Total + Taxes
+,,=SUM(C2..C3) * 1.28
