@@ -450,6 +450,7 @@ handleFileModeKeyStroke:
         int row = 0;
         int cc;
         (string Text, bool Overflow) result;
+        List<Cell> dependentCells = [];
 
         while(true) {
             cc = SheetColumnToConsoleColumn(col);
@@ -481,6 +482,8 @@ handleFileModeKeyStroke:
                 result = Trim(AlignText(value, Math.Max(value.Length, emptyCell.Length), cell.Alignment), cc);
 
                 if(workingMode != Modes.Formula && (col == SelColumn - StartColumn) && (row == SelRow - StartRow)) {
+                    dependentCells.AddRange(cell.DependentCells);
+
                     foreach(Cell ac in cell.DependentCells) {
                         // TODO: This is the same code as above... extract it as a method or anonymous function
                         if(ac.Type == Cell.Types.Number || ac.Type == Cell.Types.Formula) {
@@ -501,6 +504,8 @@ handleFileModeKeyStroke:
                     }
                 }
             }
+
+            if(cell is not null && dependentCells.Contains(cell)) SetColors(ForeCellColor, ConsoleColor.DarkGray);
 
             Console.SetCursorPosition(OffsetLeft + cc, OffsetTop + row + 1);
             Console.Write(result.Text);
@@ -596,6 +601,13 @@ handleFileModeKeyStroke:
                     }
                 }
             }
+
+            Cells.ForEach(c => {
+                if(c.Type == Cell.Types.Formula) {
+                    c.Refresh();
+                }
+            });
+
             FileName = fileName;
             return true;
         }
