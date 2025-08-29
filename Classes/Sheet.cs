@@ -91,7 +91,6 @@ internal class Sheet {
             ConsoleKeyInfo ck = Console.ReadKey(true);
 
             // FIXME: There has to be a way to simplify this mess!
-
             switch(workingMode) {
                 case Modes.Default:
                     switch(ck.Key) {
@@ -147,18 +146,25 @@ internal class Sheet {
                             break;
 
                         default:
-                            if(userInput.Length == 0 && ck.KeyChar == '=') {
-                                SelFormulaColumn = SelColumn;
-                                SelFormulaRow = SelRow;
-                                workingMode = Modes.Formula;
-                            } else {
-                                if(!char.IsAsciiLetterOrDigit(ck.KeyChar) && ck.KeyChar != '\'') break;
-                                workingMode = Modes.Edit;
+                            if(userInput.Length == 0) {
+                                switch(ck.KeyChar) {
+                                    case '=':
+                                        SelFormulaColumn = SelColumn;
+                                        SelFormulaRow = SelRow;
+                                        workingMode = Modes.Formula;
+                                        break;
+                                    case '\\':
+                                        workingMode = Modes.File;
+                                        break;
+                                    default:
+                                        if(!char.IsAsciiLetterOrDigit(ck.KeyChar) && ck.KeyChar != '\'') break;
+                                        workingMode = Modes.Edit;
+                                        break;
+                                }
                             }
                             if(userInput.Length < Console.WindowWidth - OffsetLeft - RowWidth)
                                 userInput += ck.KeyChar;
                             editCursorPosition = userInput.Length;
-
                             break;
                     }
                     break;
@@ -293,7 +299,7 @@ internal class Sheet {
                                 workingMode = Modes.FileLoad;
                                 userInput = FileName;
                                 editCursorPosition = userInput.Length;
-                            } else goto handleKeyStroke;
+                            } else goto handleFileModeKeyStroke;
                             break;
 
                         case ConsoleKey.S:
@@ -301,7 +307,7 @@ internal class Sheet {
                                 workingMode = Modes.FileSave;
                                 userInput = FileName;
                                 editCursorPosition = userInput.Length;
-                            } else goto handleKeyStroke;
+                            } else goto handleFileModeKeyStroke;
                             break;
 
                         case ConsoleKey.Enter:
@@ -331,7 +337,7 @@ internal class Sheet {
                             break;
 
                         default:
-                        handleKeyStroke:
+handleFileModeKeyStroke:
                             if((workingMode == Modes.FileLoad || workingMode == Modes.FileSave) && userInput.Length < Console.WindowWidth - OffsetLeft - RowWidth) {
                                 userInput = userInput[0..editCursorPosition] + ck.KeyChar + userInput[editCursorPosition..];
                                 editCursorPosition++;
