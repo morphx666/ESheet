@@ -158,13 +158,13 @@ internal class Cell(Sheet sheet, int col, int row) {
     }    
 
     private double Evaluate() {
-        double res = 0;
+        double result;
         DependentCells.Clear();
 
         Eval.CustomParameters.Clear();
         while(true) {
             try {
-                res = (double)Eval.Evaluate();
+                result = (double)Eval.Evaluate();
                 break;
             } catch(ArgumentException ex) when(ex.ParamName is not null) {
                 string name = ex.ParamName;
@@ -191,6 +191,6 @@ internal class Cell(Sheet sheet, int col, int row) {
             }
         }
 
-        return res;
+        return result;
     }
 }
