@@ -48,7 +48,7 @@ namespace ESheet.Classes {
                             break;
                         case "RND":
                             if(args.Parameters.Length != 0) throw new ArgumentException("RND function requires exactly 0 parameters");
-                            args.Result = rnd.NextDouble() - 0.5;
+                            args.Result = rnd.NextDouble();
                             break;
                         case "MOD":
                             if(args.Parameters.Length != 2) throw new ArgumentException("MOD function requires exactly 2 parameters");
