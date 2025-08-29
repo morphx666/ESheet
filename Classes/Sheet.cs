@@ -43,7 +43,7 @@ internal class Sheet {
     private readonly Dictionary<string, (string Key, string Action)[]> helpMessages = new() {
         { "default", new[] { ("Arrows", "Move"), ("Enter", "Edit"), ("Delete", "Delete Cell"), ("=", "Formula Mode"), ("'", "Label Mode"), ("\\", "File"), ("^Q", "Quit") } },
         { "edit", new[] { ("Enter", "Apply"), ("Esc", "Exit Edit Mode") } },
-        { "formula", new[] { ("Arrows", "Select Cell"), ("Enter", "Apply"), ("^Enter", "Add Cell to Formula"), ("Esc", "Exit Formula Mode") } },
+        { "formula", new[] { ("Arrows", "Select Cell"), ("Enter", "Apply"), ("^Enter", "Add Cell to Formula"), ("Esc", "Abort Formula Mode") } },
         { "file", new[] { ("L", "Load Sheet"), ("S", "Save Sheet"), ("Esc", "Exit File Mode") } }
     };
 
@@ -217,14 +217,6 @@ internal class Sheet {
                             break;
 
                         case ConsoleKey.Escape:
-                            if(workingMode == Modes.Formula) {
-                                cell = GetCell(SelColumn, SelRow);
-                                if(cell == null) {
-                                    cell = new Cell(this, SelColumn, SelRow);
-                                    Cells.Add(cell);
-                                }
-                                cell.Value = userInput;
-                            }
                             userInput = "";
                             editCursorPosition = 0;
                             workingMode = Modes.Default;
