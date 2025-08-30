@@ -24,9 +24,6 @@
 
     private static void RenderHelp(int c, int r, string title, (string Key, string Action)[] values) {
         Console.SetCursorPosition(c, r);
-        SetColors(ConsoleColor.Black, ConsoleColor.Black);
-        Console.Write(" ".PadLeft(Console.WindowWidth));
-        Console.SetCursorPosition(c, r);
 
         SetColors(ConsoleColor.Yellow, ConsoleColor.Black);
         Console.Write($"{title}: ");
@@ -50,12 +47,18 @@
                 Console.Write(" | ");
             }
         }
+
+        SetColors(ConsoleColor.Black, ConsoleColor.Black);
+        Console.Write(" ".PadLeft(Console.WindowWidth - Console.CursorLeft));
     }
 
     private void RenderHeaders() {
         SetColors(ConsoleColor.DarkGray, BackCellColor);
 
-        RenderHelp(OffsetLeft, OffsetTop - 1, WorkingModeToString(), helpMessages[WorkingModeToKey()]);
+        if(lastWorkingMode != workingMode) {
+            RenderHelp(OffsetLeft, OffsetTop - 1, WorkingModeToString(), helpMessages[WorkingModeToKey()]);
+            lastWorkingMode = workingMode;
+        }
 
         SetColors(ForeHeaderColor, BackHeaderColor);
         Console.SetCursorPosition(OffsetLeft, OffsetTop);
@@ -80,7 +83,7 @@
             }
             int cc = SheetColumnToConsoleColumn(c);
             Console.SetCursorPosition(OffsetLeft + cc, OffsetTop);
-            (string Text, bool Overflow) result = Trim(AlignText(GetColumnName(c + StartColumn), CellWidth, Cell.Alignments.Center), cc);
+            (string Text, bool Overflow) result = Trim(AlignText(GetColumnName(c + StartColumn), DefaultCellWidth, Cell.Alignments.Center), cc);
             Console.Write(result.Text);
 
             if(result.Overflow) break;

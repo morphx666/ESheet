@@ -14,7 +14,7 @@ internal partial class Sheet {
     public int OffsetTop { get; set; } = 3;
 
     public List<Cell> Cells { get; init; } = [];
-    public int CellWidth { get; set; } = 15;
+    public int DefaultCellWidth { get; set; } = 15;
     public int RowWidth { get; set; } = 4;
 
     public int RenderPrecision { get; set; } = 2;
@@ -42,6 +42,7 @@ internal partial class Sheet {
     private int editCursorPosition = 0;
 
     enum Modes {
+        Invalid,
         Default,
         Edit,
         Formula,
@@ -51,6 +52,7 @@ internal partial class Sheet {
     }
 
     private Modes workingMode = Modes.Default;
+    private Modes lastWorkingMode = Modes.Invalid;
 
     private readonly Dictionary<string, (string Key, string Action)[]> helpMessages = new() {
         { "default", new[] { ("Arrows", "Move"), ("Enter", "Edit"), ("Delete", "Delete"), ("=", "Formula"), ("'", "Label"), ("\\", "File"), ("^Q", "Quit") } },
@@ -63,7 +65,7 @@ internal partial class Sheet {
 
     public Sheet() {
         Console.Title = $"ESheet";
-        emptyCell = AlignText(" ", CellWidth, Cell.Alignments.Left);
+        emptyCell = AlignText(" ", DefaultCellWidth, Cell.Alignments.Left);
     }
 
     public void Run() {
@@ -424,10 +426,14 @@ handleFileModeKeyStroke:
     }
 
     private int SheetColumnToConsoleColumn(int c) {
-        return c * CellWidth + RowWidth;
+        return c * DefaultCellWidth + RowWidth;
     }
 
+    private readonly Dictionary<int, string> columnNameCache = [];
     private string GetColumnName(int c) {
+        if(columnNameCache.TryGetValue(c, out string? value)) return value;
+        
+        int col = c;
         StringBuilder sb = new();
 
         do {
@@ -436,6 +442,7 @@ handleFileModeKeyStroke:
             c--;
         } while(c >= 0);
 
+        columnNameCache[col] = sb.ToString();
         return sb.ToString();
     }
 
