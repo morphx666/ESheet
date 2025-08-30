@@ -78,11 +78,34 @@ internal partial class Sheet {
         };
 
         while(true) {
+            MainLoop:
             Render();
 
             Console.SetCursorPosition(0, 1);
             WriteLine(userInput);
             Console.SetCursorPosition(editCursorPosition, 1);
+
+            int w = Console.WindowWidth;
+            int h = Console.WindowHeight;
+            while(!Console.KeyAvailable) {
+                if(w != Console.WindowWidth || h != Console.WindowHeight) {
+                    // FIXME?: I believe there's a language where you could say something like this:
+                    // break 1
+                    // continue 2
+                    // Meaning: break from the first loop (this one) and continue with the parent loop
+                    // For example:
+                    //   while(something) as Loop1 {
+                    //    while(somethingElse) as Loop2 {
+                    //      if(someCondition) {
+                    //        break Loop2 // And this could even be optional, since the continue Loop1 would break from Loop2
+                    //        continue Loop1
+                    //      }
+                    //   }
+                    // But hey... nothing that good old goto can't solve... 😜
+                    goto MainLoop;
+                }
+                Thread.Sleep(60);
+            }
 
             ConsoleKeyInfo ck = Console.ReadKey(true);
 
