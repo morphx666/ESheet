@@ -1,4 +1,3 @@
-using ESheet.Classes;
 internal class Cell(Sheet sheet, int col, int row) {
     private string value = "";
     private double valueEvaluated = 0;
@@ -30,7 +29,6 @@ internal class Cell(Sheet sheet, int col, int row) {
     public ConsoleColor BackSelColor { get; set; } = ConsoleColor.Cyan;
 
     public Alignments Alignment { get; set; }
-    public int Width { get; set; } = 15;
 
     public static Evaluator Eval = new();
 

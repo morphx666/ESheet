@@ -14,7 +14,7 @@ internal partial class Sheet {
     public int OffsetTop { get; set; } = 3;
 
     public List<Cell> Cells { get; init; } = [];
-    public int DefaultCellWidth { get; set; } = 15;
+    public List<Column> Columns { get; init; } = [];
     public int RowWidth { get; set; } = 4;
 
     public int RenderPrecision { get; set; } = 2;
@@ -37,7 +37,6 @@ internal partial class Sheet {
     }
 
     private readonly int ccCount = 'Z' - 'A' + 1; // 26
-    private readonly string emptyCell;
     private string userInput = "";
     private int editCursorPosition = 0;
 
@@ -53,6 +52,7 @@ internal partial class Sheet {
 
     private Modes workingMode = Modes.Default;
     private Modes lastWorkingMode = Modes.Invalid;
+    private readonly Dictionary<int, string> columnsNameCache = [];
 
     private readonly Dictionary<string, (string Key, string Action)[]> helpMessages = new() {
         { "default", new[] { ("Arrows", "Move"), ("Enter", "Edit"), ("Delete", "Delete"), ("=", "Formula"), ("'", "Label"), ("\\", "File"), ("^Q", "Quit") } },
@@ -65,7 +65,6 @@ internal partial class Sheet {
 
     public Sheet() {
         Console.Title = $"ESheet";
-        emptyCell = AlignText(" ", DefaultCellWidth, Cell.Alignments.Left);
     }
 
     public void Run() {
@@ -426,13 +425,21 @@ handleFileModeKeyStroke:
     }
 
     private int SheetColumnToConsoleColumn(int c) {
-        return c * DefaultCellWidth + RowWidth;
+        int cc = 0;
+        for (int i = 0; i < c; i++) {
+            cc += GetColumnWidth(i);
+        }
+        return cc + RowWidth;
     }
 
-    private readonly Dictionary<int, string> columnNameCache = [];
+    private int GetColumnWidth(int c) {
+        Column? column = Columns.FirstOrDefault(col => col.Index == c);
+        return column?.Width ?? DefaultColumnWidth;
+    }
+
     private string GetColumnName(int c) {
-        if(columnNameCache.TryGetValue(c, out string? value)) return value;
-        
+        if(columnsNameCache.TryGetValue(c, out string? value)) return value;
+
         int col = c;
         StringBuilder sb = new();
 
@@ -442,7 +449,7 @@ handleFileModeKeyStroke:
             c--;
         } while(c >= 0);
 
-        columnNameCache[col] = sb.ToString();
+        columnsNameCache[col] = sb.ToString();
         return sb.ToString();
     }
 

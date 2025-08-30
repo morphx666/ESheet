@@ -83,7 +83,7 @@
             }
             int cc = SheetColumnToConsoleColumn(c);
             Console.SetCursorPosition(OffsetLeft + cc, OffsetTop);
-            (string Text, bool Overflow) result = Trim(AlignText(GetColumnName(c + StartColumn), DefaultCellWidth, Cell.Alignments.Center), cc);
+            (string Text, bool Overflow) result = Trim(AlignText(GetColumnName(c + StartColumn), GetColumnWidth(c + StartColumn), Cell.Alignments.Center), cc);
             Console.Write(result.Text);
 
             if(result.Overflow) break;
@@ -111,6 +111,7 @@
             }
 
             Cell? cell = GetCell(col + StartColumn, row + StartRow);
+            string emptyCell = Column.GetEmptyCell(this, col + StartColumn);
             if(cell == null) {
                 result = Trim(emptyCell, cc);
             } else {
@@ -132,7 +133,7 @@
                         } else {
                             value = ac.Value;
                         }
-                        string acResult = Trim(AlignText(value, Math.Max(value.Length, emptyCell.Length), cell.Alignment), cc).Text;
+                        string acResult = Trim(AlignText(value, Math.Max(value.Length, Column.GetColumnWidth(this, ac.Column)), cell.Alignment), cc).Text;
 
                         ConsoleColor fc = Console.ForegroundColor;
                         ConsoleColor bc = Console.BackgroundColor;
