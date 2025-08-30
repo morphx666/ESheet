@@ -6,6 +6,12 @@
         if(sc < StartColumn) StartColumn--;
         if((sr - StartRow) >= Console.WindowHeight - OffsetTop - 1) StartRow++;
         if(sr < StartRow) StartRow--;
+        int sc = workingMode == Modes.Formula ? SelFormulaColumn : SelColumn;
+        int sr = workingMode == Modes.Formula ? SelFormulaRow : SelRow;
+        if(SheetColumnToConsoleColumn(sc - StartColumn) >= Console.WindowWidth - OffsetLeft) StartColumn++;
+        if(sc < StartColumn) StartColumn--;
+        if((sr - StartRow) >= Console.WindowHeight - OffsetTop - 1) StartRow++;
+        if(sr < StartRow) StartRow--;
 
         Console.CursorVisible = false;
 
@@ -15,8 +21,10 @@
         SetColors(BackHeaderColor, BackCellColor);
         Console.SetCursorPosition(0, 0);
         Console.Write($"{GetColumnName(sc)}{sr + 1}: ");
+        Console.Write($"{GetColumnName(sc)}{sr + 1}: ");
 
         SetColors(ConsoleColor.White, ConsoleColor.Black);
+        WriteLine(GetCell(sc, sr)?.ValueFormat ?? "");
         WriteLine(GetCell(sc, sr)?.ValueFormat ?? "");
 
         Console.CursorVisible = true;
@@ -91,6 +99,8 @@
     private void RenderSheet() {
         int sc = workingMode == Modes.Formula ? SelFormulaColumn : SelColumn;
         int sr = workingMode == Modes.Formula ? SelFormulaRow : SelRow;
+        int sc = workingMode == Modes.Formula ? SelFormulaColumn : SelColumn;
+        int sr = workingMode == Modes.Formula ? SelFormulaRow : SelRow;
         int col = 0;
         int row = 0;
         int cc;
@@ -101,6 +111,10 @@
             cc = SheetColumnToConsoleColumn(col);
             if((col == SelColumn - StartColumn) && (row == SelRow - StartRow)) {
                 SetColors(ForeSelCellColor, BackSelCellColor);
+            } else if((workingMode == Modes.Formula) && (col == SelFormulaColumn - StartColumn) && (row == SelFormulaRow - StartRow)) {
+                SetColors(ConsoleColor.White, ConsoleColor.Red);
+            } else {
+                SetColors(ForeCellColor, BackCellColor);
             } else if((workingMode == Modes.Formula) && (col == SelFormulaColumn - StartColumn) && (row == SelFormulaRow - StartRow)) {
                 SetColors(ConsoleColor.White, ConsoleColor.Red);
             } else {
@@ -119,6 +133,7 @@
                 }
                 result = Trim(AlignText(value, Math.Max(value.Length, emptyCell.Length), cell.Alignment), cc);
 
+                if(workingMode != Modes.Formula && (col == sc - StartColumn) && (row == sr - StartRow)) {
                 if(workingMode != Modes.Formula && (col == sc - StartColumn) && (row == sr - StartRow)) {
                     dependentCells.AddRange(cell.DependentCells);
 
