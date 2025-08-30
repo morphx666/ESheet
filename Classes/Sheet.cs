@@ -97,7 +97,7 @@ internal partial class Sheet {
                     //   while(something) as Loop1 {
                     //    while(somethingElse) as Loop2 {
                     //      if(someCondition) {
-                    //        break Loop2 // And this could even be optional, since the continue Loop1 would break from Loop2
+                    //        break Loop2 // And this could even be optional, since the continue Loop1 (in the next line) would break from Loop2
                     //        continue Loop1
                     //      }
                     //   }

@@ -8,16 +8,16 @@ A simple electronic sheet (spreadsheet) for the console
 
 ## Usage
 ### Typing Numbers
-To type a number, simply type it and press [ENTER].
+To type a number, simply type it and press `[ENTER]`.
 While in editing mode, the edit field behaves like a textbox: you can backspace, delete, move the caret left and right, etc... there's no selection support though.
 
 ### Typing Labels
-To type a label simply write it and press [ENTER].
-If you want to force Label mode, start the label with a single quote: [']
+To type a label simply write it and press `[ENTER]`.
+If you want to force Label mode, start the label with a single quote: `[']`
 
-### Typing Fomulas
-To enter formula mode press [=].
-While in formula mode you have all the features of Edit mode plus the ability to select cells using [CTRL]+[ArrowKeys]. Once a cell is selected, press [CTRL]+[ENTER] to append it to the formula. Press [ENTER] when done.
+### Typing Formulas
+To enter formula mode press `[=]`.
+While in formula mode you have all the features of Edit mode plus the ability to select cells using `[CTRL]+[ArrowKeys]`. Once a cell is selected, press `[CTRL]+[ENTER]` to append it to the formula. Press `[ENTER]` when done.
 
 ### Supported functions
 Function arguments support direct numeric entires and references to a cell. Some functions, such as `SUM`, support cell ranges.  
