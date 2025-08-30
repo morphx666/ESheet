@@ -73,7 +73,11 @@
             Console.SetCursorPosition(OffsetLeft, OffsetTop + r);
 
             string rowLabel = (r + StartRow).ToString();
-            if(rowLabel.Length >= RowWidth) RowWidth = rowLabel.Length + 1;
+            if(rowLabel.Length >= RowWidth) {
+                RowWidth = rowLabel.Length + 1;
+                RenderHeaders();
+                return;
+            }
             Console.Write(AlignText(rowLabel, RowWidth, Cell.Alignments.Right));
         }
 
