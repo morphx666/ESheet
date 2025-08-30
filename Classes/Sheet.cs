@@ -1,3 +1,5 @@
+#pragma warning disable IDE0039
+
 using System.Text;
 
 internal partial class Sheet {
@@ -14,6 +16,8 @@ internal partial class Sheet {
     public List<Cell> Cells { get; init; } = [];
     public int CellWidth { get; set; } = 15;
     public int RowWidth { get; set; } = 4;
+
+    public int RenderPrecision { get; set; } = 2;
 
     public ConsoleColor ForeCellColor { get; set; } = ConsoleColor.White;
     public ConsoleColor BackCellColor { get; set; } = ConsoleColor.Black;
@@ -65,12 +69,12 @@ internal partial class Sheet {
     public void Run() {
         Cell? cell;
 
-        Func<char, bool> isCtrlChar = c => {
-            return (c == '\'' || c == '=' || c == '\\');
+        Func<char, bool> IsCtrlChar = c => {
+            return c == '\'' || c == '=' || c == '\\';
         };
 
-        Func<bool> userInputHasCtrlChar = () => {
-            return userInput.Length > 0 && isCtrlChar(userInput[0]);
+        Func<bool> UserInputHasCtrlChar = () => {
+            return userInput.Length > 0 && IsCtrlChar(userInput[0]);
         };
 
         while(true) {
@@ -165,7 +169,7 @@ internal partial class Sheet {
                                         break;
                                 }
                             }
-                            if(isCtrlChar(ck.KeyChar) || char.IsAsciiLetterOrDigit(ck.KeyChar)) {
+                            if(IsCtrlChar(ck.KeyChar) || char.IsAsciiLetterOrDigit(ck.KeyChar)) {
                                 if(userInput.Length < Console.WindowWidth - OffsetLeft - RowWidth)
                                     userInput += ck.KeyChar;
                                 editCursorPosition = userInput.Length;
@@ -240,7 +244,7 @@ internal partial class Sheet {
                             break;
 
                         case ConsoleKey.Backspace:
-                            if(userInput.Length > (userInputHasCtrlChar() ? 1 : 0) && editCursorPosition > 0) {
+                            if(userInput.Length > (UserInputHasCtrlChar() ? 1 : 0) && editCursorPosition > 0) {
                                 editCursorPosition--;
                                 userInput = userInput[0..editCursorPosition] + userInput[(editCursorPosition + 1)..];
                             }
@@ -286,7 +290,7 @@ internal partial class Sheet {
                             break;
 
                         case ConsoleKey.Backspace:
-                            if(userInput.Length > (userInputHasCtrlChar() ? 1 : 0) && editCursorPosition > 0) {
+                            if(userInput.Length > (UserInputHasCtrlChar() ? 1 : 0) && editCursorPosition > 0) {
                                 editCursorPosition--;
                                 userInput = userInput[0..editCursorPosition] + userInput[(editCursorPosition + 1)..];
                             }

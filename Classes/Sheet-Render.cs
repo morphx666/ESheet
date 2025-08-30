@@ -113,7 +113,7 @@
             } else {
                 string value;
                 if(cell.Type == Cell.Types.Number || cell.Type == Cell.Types.Formula) {
-                    value = cell.ValueEvaluated.ToString("N2");
+                    value = cell.ValueEvaluated.ToString($"N{RenderPrecision}");
                 } else {
                     value = cell.Value;
                 }
@@ -125,7 +125,7 @@
                     foreach(Cell ac in cell.DependentCells) {
                         // TODO: This is the same code as above... extract it as a method or anonymous function
                         if(ac.Type == Cell.Types.Number || ac.Type == Cell.Types.Formula) {
-                            value = ac.ValueEvaluated.ToString("N2");
+                            value = ac.ValueEvaluated.ToString($"N{RenderPrecision}");
                         } else {
                             value = ac.Value;
                         }
