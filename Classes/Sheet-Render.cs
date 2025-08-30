@@ -71,7 +71,10 @@
                 SetColors(ForeHeaderColor, BackHeaderColor);
             }
             Console.SetCursorPosition(OffsetLeft, OffsetTop + r);
-            Console.Write(AlignText((r + StartRow).ToString(), RowWidth, Cell.Alignments.Left));
+
+            string rowLabel = (r + StartRow).ToString();
+            if(rowLabel.Length >= RowWidth) RowWidth = rowLabel.Length + 1;
+            Console.Write(AlignText(rowLabel, RowWidth, Cell.Alignments.Right));
         }
 
         int c = 0;

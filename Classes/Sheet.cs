@@ -131,6 +131,16 @@ internal partial class Sheet {
                             SelColumn++;
                             break;
 
+                        case ConsoleKey.PageUp:
+                            SelRow = Math.Max(0, SelRow - (Console.WindowHeight - OffsetTop - 1));
+                            while((SelRow - StartRow) < 0) StartRow--; // TODO: Move this to a separate method
+                            break;
+
+                        case ConsoleKey.PageDown:
+                            SelRow += Console.WindowHeight - OffsetTop - 1;
+                            while((SelRow - StartRow) >= Console.WindowHeight - OffsetTop - 1) StartRow++; // TODO: Move this to a separate method
+                            break;
+
                         case ConsoleKey.Q:
                             if(isCtrl) return;
                             break;
@@ -171,9 +181,9 @@ internal partial class Sheet {
 
                         case ConsoleKey.End:
                             SelColumn = Cells.Count == 0 ? 0 : Cells.Max(c => c.Column);
-                            while(SheetColumnToConsoleColumn(SelColumn - StartColumn) >= Console.WindowWidth - OffsetLeft) StartColumn++;
+                            while(SheetColumnToConsoleColumn(SelColumn - StartColumn) >= Console.WindowWidth - OffsetLeft) StartColumn++; // TODO: Move this to a separate method
                             SelRow = Cells.Count == 0 ? 0 : Cells.Max(c => c.Row);
-                            while((SelRow - StartRow) >= Console.WindowHeight - OffsetTop - 1) StartRow++;
+                            while((SelRow - StartRow) >= Console.WindowHeight - OffsetTop - 1) StartRow++; // TODO: Move this to a separate method
                             break;
 
                         default:
