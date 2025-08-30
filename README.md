@@ -8,7 +8,7 @@ A simple electronic sheet (spreadsheet) for the console
 
 ## Usage
 ### Typing Numbers
-To type a number, simply type it and press `[ENTER]`.
+To type a number simply type it and press `[ENTER]`.
 While in editing mode, the edit field behaves like a textbox: you can backspace, delete, move the caret left and right, etc... there's no selection support though.
 
 ### Typing Labels
@@ -23,7 +23,7 @@ While in formula mode you have all the features of Edit mode plus the ability to
 Function arguments support direct numeric entires and references to a cell. Some functions, such as `SUM`, support cell ranges.  
 Cell ranges are defined using the double dot operator `..` such that `A1..A5` represents all cells from `A1` to `A5`.
 
-- **IIF**: Ternary operator. Evaluates a condition and returns the appropriate result.  
+- **IIF**: The ternary operator evaluates a condition and returns the appropriate result.  
   *IIF(condition, result when true, result when false)*  
   Example: `IIF(A1 > 75, 1, 0)`
 
