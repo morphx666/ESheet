@@ -64,6 +64,7 @@
         Console.SetCursorPosition(OffsetLeft, OffsetTop);
         Console.Write(AlignText(" ", RowWidth, Cell.Alignments.Left));
 
+ReStart:
         for(int r = 1; r < Console.WindowHeight - OffsetTop; r++) {
             if(r - 1 == SelRow - StartRow) {
                 SetColors(ForeHeaderColor, BackHeaderSelColor);
@@ -75,8 +76,7 @@
             string rowLabel = (r + StartRow).ToString();
             if(rowLabel.Length >= RowWidth) {
                 RowWidth = rowLabel.Length + 1;
-                RenderHeaders();
-                return;
+                goto ReStart; // Another goto? Am I going mad??? Well, it's better than recursion...
             }
             Console.Write(AlignText(rowLabel, RowWidth, Cell.Alignments.Right));
         }
