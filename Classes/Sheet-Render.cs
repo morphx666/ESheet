@@ -1,4 +1,7 @@
-﻿internal partial class Sheet {
+﻿using System.Drawing;
+using System.Net.Http.Headers;
+
+internal partial class Sheet {
     public void Render() {
         int sc = workingMode == Modes.Formula ? SelFormulaColumn : SelColumn;
         int sr = workingMode == Modes.Formula ? SelFormulaRow : SelRow;
@@ -9,15 +12,15 @@
 
         Console.CursorVisible = false;
 
-        RenderHeaders();
-        RenderSheet();
-
         SetColors(BackHeaderColor, BackCellColor);
         Console.SetCursorPosition(0, 0);
         Console.Write($"{GetColumnName(sc)}{sr + 1}: ");
 
         SetColors(ConsoleColor.White, ConsoleColor.Black);
         WriteLine(GetCell(sc, sr)?.ValueFormat ?? "");
+
+        RenderHeaders();
+        RenderSheet();
 
         Console.CursorVisible = true;
     }
@@ -108,25 +111,45 @@ ReStart:
         List<Cell> dependentCells = [];
 
         while(true) {
+            Cell? cell = GetCell(col + StartColumn, row + StartRow);
+
             cc = SheetColumnToConsoleColumn(col);
             if((col == SelColumn - StartColumn) && (row == SelRow - StartRow)) {
                 SetColors(ForeSelCellColor, BackSelCellColor);
             } else if((workingMode == Modes.Formula) && (col == SelFormulaColumn - StartColumn) && (row == SelFormulaRow - StartRow)) {
                 SetColors(ConsoleColor.White, ConsoleColor.Red);
             } else {
-                SetColors(ForeCellColor, BackCellColor);
+                if(cell?.HasError ?? false) {
+                    SetColors(ConsoleColor.Red, BackCellColor);
+                } else {
+                    SetColors(ForeCellColor, BackCellColor);
+                }
             }
 
-            Cell? cell = GetCell(col + StartColumn, row + StartRow);
             string emptyCell = Column.GetEmptyCell(this, col + StartColumn);
             if(cell == null) {
                 result = Trim(emptyCell, cc);
             } else {
                 string value;
-                if(cell.Type == Cell.Types.Number || cell.Type == Cell.Types.Formula) {
-                    value = cell.ValueEvaluated.ToString($"N{RenderPrecision}");
+
+                if(cell.HasError) {
+                    value = "#ERROR";
                 } else {
-                    value = cell.Value;
+                    switch(cell.Type) {
+                        case Cell.Types.Number:
+                            value = cell.ValueEvaluated.Val.ToString($"N{RenderPrecision}");
+                            break;
+                        case Cell.Types.Formula:
+                            if(cell.ValueEvaluated.Str is not null) {
+                                value = cell.ValueEvaluated.Str.Replace("\"", "");
+                            } else {
+                                value = cell.ValueEvaluated.Val.ToString($"N{RenderPrecision}");
+                            }
+                            break;
+                        default:
+                            value = cell.Value;
+                            break;
+                    }
                 }
                 result = Trim(AlignText(value, Math.Max(value.Length, emptyCell.Length), cell.Alignment), cc);
 
@@ -135,10 +158,24 @@ ReStart:
 
                     foreach(Cell ac in cell.DependentCells) {
                         // TODO: This is the same code as above... extract it as a method or anonymous function
-                        if(ac.Type == Cell.Types.Number || ac.Type == Cell.Types.Formula) {
-                            value = ac.ValueEvaluated.ToString($"N{RenderPrecision}");
+                        if(ac.HasError) {
+                            value = "#ERROR";
                         } else {
-                            value = ac.Value;
+                            switch(ac.Type) {
+                                case Cell.Types.Number:
+                                    value = ac.ValueEvaluated.Val.ToString($"N{RenderPrecision}");
+                                    break;
+                                case Cell.Types.Formula:
+                                    if(ac.ValueEvaluated.Str is not null) {
+                                        value = ac.ValueEvaluated.Str.Replace("\"", "");
+                                    } else {
+                                        value = ac.ValueEvaluated.Val.ToString($"N{RenderPrecision}");
+                                    }
+                                    break;
+                                default:
+                                    value = ac.Value;
+                                    break;
+                            }
                         }
                         string acResult = Trim(AlignText(value, Math.Max(value.Length, Column.GetColumnWidth(this, ac.Column)), cell.Alignment), cc).Text;
 
@@ -158,6 +195,12 @@ ReStart:
 
             Console.SetCursorPosition(OffsetLeft + cc, OffsetTop + row + 1);
             Console.Write(result.Text);
+
+            if((col == SelColumn - StartColumn) && (row == SelRow - StartRow) && (cell?.HasError ?? false)) {
+                SetColors(ConsoleColor.Red, BackCellColor);
+                Console.SetCursorPosition(Console.WindowWidth - cell.ErrorMessage.Length - 1, 0);
+                Console.Write(cell.ErrorMessage);
+            }
 
             if(result.Overflow) {
                 col = 0;

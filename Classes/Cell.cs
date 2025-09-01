@@ -1,7 +1,9 @@
 internal class Cell(Sheet sheet, int col, int row) {
     private string value = "";
-    private double valueEvaluated = 0;
+    private (double Val, string? Str) valueEvaluated = (0, null);
     private readonly Sheet sheet = sheet;
+    private bool hasError = false;
+    private string errorMessage = "";
 
     public enum Types {
         Empty,
@@ -30,11 +32,15 @@ internal class Cell(Sheet sheet, int col, int row) {
 
     public Alignments Alignment { get; set; }
 
+    public bool HasError { get => hasError; }
+    public string ErrorMessage { get => errorMessage; }
+
     public static Evaluator Eval = new();
 
     public string Value {
         get => value;
         set {
+            hasError = false;
             this.value = value;
             if(value != "") {
                 switch(value[0]) {
@@ -48,7 +54,7 @@ internal class Cell(Sheet sheet, int col, int row) {
                         this.value = this.value[1..];
                         Alignment = Alignments.Right;
 
-                        Eval.Formula = ExpandRanges(this.value);
+                        Eval.Formula = ExtractStrings(ExpandRanges(this.value));
                         valueEvaluated = Evaluate();
                         break;
                     default:
@@ -77,7 +83,7 @@ internal class Cell(Sheet sheet, int col, int row) {
         }
     }
 
-    public double ValueEvaluated {
+    public (double Val, string? Str) ValueEvaluated {
         get => valueEvaluated;
     }
 
@@ -94,11 +100,12 @@ internal class Cell(Sheet sheet, int col, int row) {
         if(value == "") {
             Type = Types.Empty;
         } else {
-            if(double.TryParse(value, out valueEvaluated)) {
+            if(double.TryParse(value, out double evalValue)) {
+                valueEvaluated = (evalValue, null);
                 Type = Types.Number;
                 Alignment = Alignments.Right;
             } else {
-                Eval.Formula = ExpandRanges(value);
+                Eval.Formula = ExtractStrings(ExpandRanges(this.value));
                 try {
                     valueEvaluated = Evaluate();
                     Type = Types.Formula;
@@ -154,26 +161,53 @@ internal class Cell(Sheet sheet, int col, int row) {
         }
 
         return formula;
-    }    
+    }
 
-    private double Evaluate() {
-        double result;
+    internal string ExtractStrings(string formula) {
+        Eval.Strings.Clear();
+
+        int p0 = formula.IndexOf('"');
+        while(p0 != -1) {
+            int p1 = formula.IndexOf('"', p0 + 1);
+            if(p1 == -1) {
+                // Missing closing quote
+                break;
+            }
+
+            string str = formula.Substring(p0, p1 - p0 + 1);
+            int id = Eval.Strings.Count;
+            Eval.Strings.Add(id, str);
+            formula = formula.Replace(str, $"STR({id})");
+
+            p0 = formula.IndexOf('"');
+        }
+
+        return formula;
+    }
+
+    private (double Val, string? Str) Evaluate() {
+        (double Val, string? Str) result;
         DependentCells.Clear();
 
         Eval.CustomParameters.Clear();
         while(true) {
             try {
-                result = (double)Eval.Evaluate();
+                result = Eval.Evaluate();
                 break;
             } catch(ArgumentException ex) when(ex.ParamName is not null) {
                 string name = ex.ParamName;
+                if((name.StartsWith('"') && name.EndsWith('"')) ||
+                   (name.StartsWith('\'') && name.EndsWith('\''))) {
+                    return (0, null);
+                }
+
                 Cell? cell = sheet.GetCell(name);
                 if(cell == null) {
                     (bool IsValid, int Column, int Row) = sheet.IsCellNameValid(name);
                     if(IsValid) {
                         cell = new(sheet, Column, Row) { Value = "" };
                         sheet.Cells.Add(cell);
-                    } else { 
+                    } else {
                         throw new Exception($"Unrecognized expression '{name}'");
                     }
                 }
@@ -184,12 +218,22 @@ internal class Cell(Sheet sheet, int col, int row) {
                 //    break;
                 //}
 
-                double value = cell.ValueEvaluated;
-                Eval.CustomParameters.Add(name, value);
+                if(cell.HasError) {
+                    hasError = true;
+                    errorMessage = ex.Message;
+                    return (0, null);
+                }
+                Eval.CustomParameters.Add(name, cell.ValueEvaluated.Val);
                 DependentCells.Add(cell);
+            } catch(Exception ex) {
+                hasError = true;
+                errorMessage = ex.Message;
+                return (0, null);
             }
         }
 
+        // TODO: Check for circular references
+        // TODO: Should we reset the hasError flag here?
         return result;
     }
 }

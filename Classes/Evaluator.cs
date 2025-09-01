@@ -9,14 +9,21 @@ internal class Evaluator {
     private string formula = "";
     private readonly Dictionary<string, double> customParameters = [];
     private CustomFunctionDel? customFunction;
-
     private Expression? exp;
+
     private readonly Random rnd = new();
+    private readonly Dictionary<int, string> strings = [];
 
     public CustomFunctionDel? CustomFunctionHandler {
         get { return customFunction; }
         set { customFunction = value; }
     }
+
+    public Dictionary<string, object>? Variables { get => exp?.Parameters; }
+
+    public Dictionary<string, double> CustomParameters { get => customParameters; }
+
+    public Dictionary<int, string> Strings { get => strings; }
 
     public string Formula {
         get { return formula; }
@@ -54,11 +61,16 @@ internal class Evaluator {
 
                     case "SUM":
                         if(args.Parameters.Length < 2) throw new ArgumentException("SUM function requires 2 parameters or more");
-                        args.Result = args.Parameters.Sum(p => (double)p.Evaluate());
+                        args.Result = args.Parameters.Sum(p => Convert.ToDouble(p.Evaluate()));
                         break;
                     case "AVG":
                         if(args.Parameters.Length < 2) throw new ArgumentException("AVG function requires 2 parameters or more");
-                        args.Result = args.Parameters.Average(p => (double)p.Evaluate());
+                        args.Result = args.Parameters.Average(p => Convert.ToDouble(p.Evaluate()));
+                        break;
+
+                    case "STR":
+                        if(args.Parameters.Length != 1) throw new ArgumentException("STR function requires exactly 1 parameter");
+                        args.Result = strings[Convert.ToInt32(args.Parameters[0].Evaluate())];
                         break;
                 }
             };
@@ -82,15 +94,11 @@ internal class Evaluator {
         }
     }
 
-    public Dictionary<string, object>? Variables {
-        get { return exp?.Parameters; }
-    }
+    public (double Val, string? Str) Evaluate() {
+        if(exp == null || formula == "0") return (0, null);
 
-    public Dictionary<string, double> CustomParameters {
-        get { return customParameters; }
-    }
-
-    public double Evaluate() {
-        return exp == null || formula == "0" ? 0 : Convert.ToDouble(exp.Evaluate());
+        var result = exp.Evaluate();
+        if(result is string str) return (0, str);
+        return (Convert.ToDouble(result), null);
     }
 }
