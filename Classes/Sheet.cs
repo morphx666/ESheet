@@ -516,7 +516,7 @@ handleFileModeKeyStroke:
             Cells.Clear();
             string[] lines = File.ReadAllLines(fileName);
             for(int r = 0; r < lines.Length; r++) {
-                string[] values = lines[r].Split(',');
+                string[] values = lines[r].Split('\t');
                 for(int c = 0; c < values.Length; c++) {
                     if(values[c].Trim() != "") {
                         Cell cell = new(this, c, r, values[c]);
@@ -548,7 +548,7 @@ handleFileModeKeyStroke:
                 } else {
                     sb.Append(cell.ValueFormat);
                 }
-                if(c < maxColumn) sb.Append(',');
+                if(c < maxColumn) sb.Append('\t');
             }
             sb.AppendLine();
         }

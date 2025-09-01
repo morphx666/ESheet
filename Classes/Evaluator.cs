@@ -54,11 +54,16 @@ internal class Evaluator {
 
                     case "SUM":
                         if(args.Parameters.Length < 2) throw new ArgumentException("SUM function requires 2 parameters or more");
-                        args.Result = args.Parameters.Sum(p => (double)p.Evaluate());
+                        args.Result = args.Parameters.Sum(p => Convert.ToDouble(p.Evaluate()));
                         break;
                     case "AVG":
                         if(args.Parameters.Length < 2) throw new ArgumentException("AVG function requires 2 parameters or more");
-                        args.Result = args.Parameters.Average(p => (double)p.Evaluate());
+                        args.Result = args.Parameters.Average(p => Convert.ToDouble(p.Evaluate()));
+                        break;
+
+                    case "STR":
+                        if(args.Parameters.Length != 1) throw new ArgumentException("STR function requires exactly 1 parameter");
+                        args.Result = Strings[Convert.ToInt32(args.Parameters[0].Evaluate())];
                         break;
                 }
             };
@@ -90,7 +95,13 @@ internal class Evaluator {
         get { return customParameters; }
     }
 
-    public double Evaluate() {
-        return exp == null || formula == "0" ? 0 : Convert.ToDouble(exp.Evaluate());
+    public Dictionary<int, string> Strings { get; } = [];
+
+    public (double Val, string? Str) Evaluate() {
+        if(exp == null || formula == "0") return (0, null);
+
+        var result = exp.Evaluate();
+        if(result is string str) return (0, str);
+        return (Convert.ToDouble(result), null);
     }
 }
