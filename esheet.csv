@@ -9,3 +9,6 @@
 'ITBIS	=18%	=SUM(C2..C6)
 'PPLEY	=10%	'Total
 		=C9 * (1 + B9 + B10)
+		
+		'Budget
+		=IIF(C11 > 15000, "OVER", "UNDER")
