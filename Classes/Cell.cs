@@ -20,8 +20,8 @@ internal class Cell(Sheet sheet, int col, int row) {
 
     public Types Type { get; private set; }
 
-    public int Column { get; init; } = col;
-    public int Row { get; init; } = row;
+    public int Column { get; private set; } = col;
+    public int Row { get; private set; } = row;
 
     public List<Cell> DependentCells = [];
 
@@ -120,6 +120,11 @@ internal class Cell(Sheet sheet, int col, int row) {
 
     public void Refresh() {
         this.Value = this.value;
+    }
+
+    internal void SetColRow(int col, int row) {
+        this.Column = col;
+        this.Row = row;
     }
 
     internal string ExpandRanges(string formula) {

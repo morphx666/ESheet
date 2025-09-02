@@ -42,12 +42,19 @@ internal partial class Sheet {
 
     enum Modes {
         Invalid,
+
         Default,
         Edit,
+
         Formula,
+
         File,
         FileLoad,
-        FileSave
+        FileSave,
+
+        Sheet,
+        SheetColumn,
+        SheetRow,
     }
 
     private Modes workingMode = Modes.Default;
@@ -55,12 +62,15 @@ internal partial class Sheet {
     private readonly Dictionary<int, string> columnsNameCache = [];
 
     private readonly Dictionary<string, (string Key, string Action)[]> helpMessages = new() {
-        { "default", new[] { ("Arrows", "Move"), ("Enter", "Edit"), ("Delete", "Delete"), ("=", "Formula"), ("'", "Label"), ("\\", "File"), ("^Q", "Quit") } },
+        { "default", new[] { ("←↑↓→", "Move"), ("Enter", "Edit"), ("Delete", "Delete"), ("=", "Formula"), ("'", "Label"), ("^K", "Sheet"), ("\\", "File"), ("^Q", "Quit") } },
         { "edit", new[] { ("Enter", "Apply"), ("Esc", "Exit Edit Mode") } },
-        { "formula", new[] { ("^Arrows", "Select Cell"), ("Enter", "Apply"), ("^Enter", "Add Cell to Formula"), ("Esc", "Exit Formula Mode") } },
+        { "formula", new[] { ("^←↑↓→", "Select Cell"), ("Enter", "Apply"), ("^Enter", "Add Cell to Formula"), ("Esc", "Exit Formula Mode") } },
         { "file", new[] { ("N", "New Sheet"), ("L", "Load Sheet"), ("S", "Save Sheet"), ("Esc", "Exit File Mode") } },
         { "file|load", new[] { ("Enter", "Load"), ("Esc", "Cancel Load") } },
-        { "file|save", new[] { ("Enter", "Save"), ("Esc", "Cancel Save") } }
+        { "file|save", new[] { ("Enter", "Save"), ("Esc", "Cancel Save") } },
+        { "sheet", new[] { ("C", "Columns"), ("R", "Rows"), ("Esc", "Exit Sheet Mode") } },
+        { "sheet|column", new[] { ("^←", "Insert Left"), ("^→", "Insert Right"), ("Delete", "Delete"), ("Esc", "Exit Column Mode") } },
+        { "sheet|row", new[] { ("^↑", "Insert Above"), ("^↓", "Insert Below"), ("Delete", "Delete"), ("Esc", "Exit Row Mode") } },
     };
 
     public Sheet() {
@@ -131,10 +141,6 @@ internal partial class Sheet {
                             while((SelRow - StartRow) >= Console.WindowHeight - OffsetTop - 1) StartRow++; // TODO: Move this to a separate method
                             break;
 
-                        case ConsoleKey.Q:
-                            if(isCtrl) return;
-                            break;
-
                         case ConsoleKey.Backspace:
                             if(userInput.Length > 0)
                                 userInput = userInput[..^1];
@@ -177,6 +183,19 @@ internal partial class Sheet {
                             break;
 
                         default:
+                            switch(ck.Key) {
+                                case ConsoleKey.Q:
+                                    if(isCtrl) return;
+                                    break;
+
+                                case ConsoleKey.K:
+                                    if(isCtrl) {
+                                        workingMode = Modes.Sheet;
+                                        continue;
+                                    }
+                                    break;
+                            }
+
                             if(userInput.Length == 0) {
                                 switch(ck.KeyChar) {
                                     case '=':
@@ -392,6 +411,67 @@ handleFileModeKeyStroke:
 
                     }
                     break;
+
+                case Modes.Sheet:
+                case Modes.SheetColumn:
+                case Modes.SheetRow:
+                    switch(ck.Key) {
+                        case ConsoleKey.LeftArrow:
+                            if(isCtrl) {
+                                InsertColumn(SelColumn + StartColumn, -1);
+                            } else {
+                                if(SelColumn > 0) SelColumn--;
+                            }
+                            break;
+
+                        case ConsoleKey.RightArrow:
+                            if(isCtrl) {
+                                InsertColumn(SelColumn + StartColumn, 1);
+                            } else {
+                                SelColumn++;
+                            }
+                            break;
+
+                        case ConsoleKey.UpArrow:
+                            if(isCtrl) {
+                                InsertRow(SelRow + StartRow, -1);
+                            } else {
+                                if(SelRow > 0) SelRow--;
+                            }
+                            break;
+
+                        case ConsoleKey.DownArrow:
+                            if(isCtrl) {
+                                InsertRow(SelRow + StartRow, 1);
+                            } else {
+                                SelRow++;
+                            }
+                            break;
+
+                        case ConsoleKey.Delete:
+                            if(workingMode == Modes.SheetColumn) {
+                                DeleteColumn(SelColumn + StartColumn);
+                            } else {
+                                DeleteRow(SelRow + StartRow);
+                            }
+                            break;
+
+                        case ConsoleKey.C:
+                            workingMode = Modes.SheetColumn;
+                            break;
+
+                        case ConsoleKey.R:
+                            workingMode = Modes.SheetRow;
+                            break;
+
+                        case ConsoleKey.Escape:
+                            workingMode = Modes.Default;
+                            userInput = "";
+                            editCursorPosition = 0;
+                            break;
+                    }
+                    break;
+
             }
         }
     }
@@ -502,6 +582,46 @@ handleFileModeKeyStroke:
     private void FullRefresh() {
         Cells.ForEach(c => {
             if(c.Type == Cell.Types.Formula) c.Refresh();
+        });
+    }
+
+    private void InsertColumn(int col, int direction) {
+        Cells.ForEach(c => {
+            switch(direction) {
+                case -1:
+                    if(c.Column >= col) c.SetColRow(c.Column + 1, c.Row);
+                    break;
+                case 1:
+                    if(c.Column >= col + 1) c.SetColRow(c.Column + 1, c.Row);
+                    break;
+            }
+        });
+    }
+
+    private void DeleteColumn(int col) {
+        Cells.RemoveAll(c => c.Column == col);
+        Cells.ForEach(c => {
+            if(c.Column > col) c.SetColRow(c.Column - 1, c.Row);
+        });
+    }
+
+    private void DeleteRow(int row) {
+        Cells.RemoveAll(c => c.Row == row);
+        Cells.ForEach(c => {
+            if(c.Row > row) c.SetColRow(c.Column, c.Row - 1);
+        });
+    }
+
+    private void InsertRow(int row, int direction) {
+        Cells.ForEach(c => {
+            switch(direction) {
+                case -1:
+                    if(c.Row >= row) c.SetColRow(c.Column, c.Row + 1);
+                    break;
+                case 1:
+                    if(c.Row >= row + 1) c.SetColRow(c.Column, c.Row + 1);
+                    break;
+            }
         });
     }
 

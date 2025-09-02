@@ -62,7 +62,6 @@ internal class Evaluator {
                     case "SUM":
                         if(args.Parameters.Length < 2) throw new ArgumentException("SUM function requires 2 parameters or more");
                         args.Result = args.Parameters.Sum(p => Convert.ToDouble(p.Evaluate()));
-                        args.Result = args.Parameters.Sum(p => Convert.ToDouble(p.Evaluate()));
                         break;
                     case "AVG":
                         if(args.Parameters.Length < 2) throw new ArgumentException("AVG function requires 2 parameters or more");
@@ -88,7 +87,7 @@ internal class Evaluator {
                         args.Result = 299_792_458; // Speed of light in m/s
                         break;
                     default:
-                        if(customParameters.ContainsKey(name)) args.Result = customParameters[name];
+                        if(customParameters.TryGetValue(name, out double value)) args.Result = value;
                         break;
                 }
             };
