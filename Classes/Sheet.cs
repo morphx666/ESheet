@@ -69,7 +69,7 @@ internal partial class Sheet {
         { "file|load", new[] { ("Enter", "Load"), ("Esc", "Cancel Load") } },
         { "file|save", new[] { ("Enter", "Save"), ("Esc", "Cancel Save") } },
         { "sheet", new[] { ("C", "Columns"), ("R", "Rows"), ("Esc", "Exit Sheet Mode") } },
-        { "sheet|column", new[] { ("^←", "Insert Left"), ("^→", "Insert Right"), ("Delete", "Delete"), ("Esc", "Exit Column Mode") } },
+        { "sheet|column", new[] { ("^←", "Insert Left"), ("^→", "Insert Right"), ("Delete", "Delete"), ("^+", "Wider"), ("^-", "Narrower"), ("Esc", "Exit Column Mode") } },
         { "sheet|row", new[] { ("^↑", "Insert Above"), ("^↓", "Insert Below"), ("Delete", "Delete"), ("Esc", "Exit Row Mode") } },
     };
 
@@ -89,7 +89,7 @@ internal partial class Sheet {
         };
 
         while(true) {
-            MainLoop:
+MainLoop:
             Render();
 
             Console.SetCursorPosition(0, 1);
@@ -413,8 +413,8 @@ handleFileModeKeyStroke:
                     break;
 
                 case Modes.Sheet:
-                case Modes.SheetColumn:
                 case Modes.SheetRow:
+                case Modes.SheetColumn:
                     switch(ck.Key) {
                         case ConsoleKey.LeftArrow:
                             if(isCtrl) {
@@ -454,6 +454,14 @@ handleFileModeKeyStroke:
                             } else {
                                 DeleteRow(SelRow + StartRow);
                             }
+                            break;
+
+                        case ConsoleKey.OemPlus:
+                            if(isCtrl) SetColumnWidth(SelColumn + StartColumn, 1);
+                            break;
+
+                        case ConsoleKey.OemMinus:
+                            if(isCtrl) SetColumnWidth(SelColumn + StartColumn, -1);
                             break;
 
                         case ConsoleKey.C:
@@ -510,7 +518,7 @@ handleFileModeKeyStroke:
 
     private int SheetColumnToConsoleColumn(int c) {
         int cc = 0;
-        for (int i = 0; i < c; i++) {
+        for(int i = 0; i < c; i++) {
             cc += GetColumnWidth(i);
         }
         return cc + RowWidth;
@@ -623,6 +631,17 @@ handleFileModeKeyStroke:
                     break;
             }
         });
+    }
+
+    private void SetColumnWidth(int col, int delta) {
+        Column? column = Columns.FirstOrDefault(c => c.Index == col);
+        if(column == null) {
+            column = new() { Index = col };
+            Columns.Add(column);
+        }
+        if(column.Width + delta > 0) {
+            column.Width = Math.Max(1, column.Width + delta);
+        }
     }
 
     public bool LoadFile(string fileName) {
