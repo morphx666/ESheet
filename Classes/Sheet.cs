@@ -90,19 +90,9 @@ internal partial class Sheet {
             int h = Console.WindowHeight;
             while(!Console.KeyAvailable) {
                 if(w != Console.WindowWidth || h != Console.WindowHeight) {
-                    // FIXME?: I believe there's a language where you could say something like this:
-                    // break 1
-                    // continue 2
-                    // Meaning: break from the first loop (this one) and continue with the parent loop
-                    // For example:
-                    //   while(something) as Loop1 {
-                    //    while(somethingElse) as Loop2 {
-                    //      if(someCondition) {
-                    //        break Loop2 // And this could even be optional, since the continue Loop1 (in the next line) would break from Loop2
-                    //        continue Loop1
-                    //      }
-                    //   }
-                    // But hey... nothing that good old goto can't solve... 😜
+                    Console.Clear();
+                    lastWorkingMode = Modes.Invalid; // Force Help re-render
+                    Thread.Sleep(250); // Wait for the console to stabilize
                     goto MainLoop;
                 }
                 Thread.Sleep(60);

@@ -1,7 +1,4 @@
-﻿using System.Drawing;
-using System.Net.Http.Headers;
-
-internal partial class Sheet {
+﻿internal partial class Sheet {
     public void Render() {
         int sc = workingMode == Modes.Formula ? SelFormulaColumn : SelColumn;
         int sr = workingMode == Modes.Formula ? SelFormulaRow : SelRow;
