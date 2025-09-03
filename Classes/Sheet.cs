@@ -15,7 +15,7 @@ internal partial class Sheet {
 
     public List<Cell> Cells { get; init; } = [];
     public List<Column> Columns { get; init; } = [];
-    public int RowWidth { get; set; } = 4;
+    public int RowHeaderWidth { get; set; } = 4;
 
     public int RenderPrecision { get; set; } = 2;
 
@@ -74,7 +74,7 @@ internal partial class Sheet {
     };
 
     public Sheet() {
-        Console.Title = $"ESheet";
+        Console.Title = "ESheet";
     }
 
     public void Run() {
@@ -217,7 +217,7 @@ MainLoop:
                                 || ck.KeyChar == '-'
                                 || ck.KeyChar == '+'
                                 || ck.KeyChar == '"') {
-                                if(userInput.Length < Console.WindowWidth - OffsetLeft - RowWidth)
+                                if(userInput.Length < Console.WindowWidth - OffsetLeft - RowHeaderWidth)
                                     userInput += ck.KeyChar;
                                 editCursorPosition = userInput.Length;
                             }
@@ -304,7 +304,7 @@ MainLoop:
                             break;
 
                         default:
-                            if(userInput.Length < Console.WindowWidth - OffsetLeft - RowWidth) {
+                            if(userInput.Length < Console.WindowWidth - OffsetLeft - RowHeaderWidth) {
                                 userInput = userInput[0..editCursorPosition] + ck.KeyChar + userInput[editCursorPosition..];
                                 editCursorPosition++;
                             }
@@ -403,7 +403,7 @@ MainLoop:
 
                         default:
 handleFileModeKeyStroke:
-                            if((workingMode == Modes.FileLoad || workingMode == Modes.FileSave) && userInput.Length < Console.WindowWidth - OffsetLeft - RowWidth) {
+                            if((workingMode == Modes.FileLoad || workingMode == Modes.FileSave) && userInput.Length < Console.WindowWidth - OffsetLeft - RowHeaderWidth) {
                                 userInput = userInput[0..editCursorPosition] + ck.KeyChar + userInput[editCursorPosition..];
                                 editCursorPosition++;
                             }
@@ -521,7 +521,7 @@ handleFileModeKeyStroke:
         for(int i = 0; i < c; i++) {
             cc += GetColumnWidth(i);
         }
-        return cc + RowWidth;
+        return cc + RowHeaderWidth;
     }
 
     private int GetColumnWidth(int c) {
@@ -694,7 +694,7 @@ handleFileModeKeyStroke:
             sb.AppendLine();
         }
 
-        foreach(Column col in Columns) {
+        foreach(Column col in Columns.OrderBy(c => c.Index)) {
             if(col.Width != DefaultColumnWidth) {
                 sb.AppendLine($"#COLUMN\t{col.Index}\t{col.Width}");
             }

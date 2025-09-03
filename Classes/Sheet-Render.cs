@@ -1,7 +1,4 @@
-﻿using System.Drawing;
-using System.Net.Http.Headers;
-
-internal partial class Sheet {
+﻿internal partial class Sheet {
     public void Render() {
         int sc = workingMode == Modes.Formula ? SelFormulaColumn : SelColumn;
         int sr = workingMode == Modes.Formula ? SelFormulaRow : SelRow;
@@ -65,7 +62,7 @@ internal partial class Sheet {
 
         SetColors(ForeHeaderColor, BackHeaderColor);
         Console.SetCursorPosition(OffsetLeft, OffsetTop);
-        Console.Write(AlignText(" ", RowWidth, Cell.Alignments.Left));
+        Console.Write(AlignText(" ", RowHeaderWidth, Cell.Alignments.Left));
 
 ReStart:
         for(int r = 1; r < Console.WindowHeight - OffsetTop; r++) {
@@ -77,11 +74,11 @@ ReStart:
             Console.SetCursorPosition(OffsetLeft, OffsetTop + r);
 
             string rowLabel = (r + StartRow).ToString();
-            if(rowLabel.Length >= RowWidth) {
-                RowWidth = rowLabel.Length + 1;
+            if(rowLabel.Length >= RowHeaderWidth) {
+                RowHeaderWidth = rowLabel.Length + 1;
                 goto ReStart; // Another goto? Am I going mad??? Well, it's better than recursion...
             }
-            Console.Write(AlignText(rowLabel, RowWidth, Cell.Alignments.Right));
+            Console.Write(AlignText(rowLabel, RowHeaderWidth, Cell.Alignments.Right));
         }
 
         int c = 0;
