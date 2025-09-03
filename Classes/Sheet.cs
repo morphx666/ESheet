@@ -652,8 +652,16 @@ handleFileModeKeyStroke:
                 string[] values = lines[r].Split('\t');
                 for(int c = 0; c < values.Length; c++) {
                     if(values[c].Trim() != "") {
-                        Cell cell = new(this, c, r, values[c]);
-                        Cells.Add(cell);
+                        if(values[c] == "#COLUMN") {
+                            int colIndex = int.Parse(values[c + 1]);
+                            int colWidth = int.Parse(values[c + 2]);
+                            Column column = new() { Index = colIndex, Width = colWidth };
+                            Columns.Add(column);
+                            break; // Only one #COLUMN directive per line is allowed
+                        } else {
+                            Cell cell = new(this, c, r, values[c]);
+                            Cells.Add(cell);
+                        }
                     }
                 }
             }
@@ -684,6 +692,12 @@ handleFileModeKeyStroke:
                 if(c < maxColumn) sb.Append('\t');
             }
             sb.AppendLine();
+        }
+
+        foreach(Column col in Columns) {
+            if(col.Width != DefaultColumnWidth) {
+                sb.AppendLine($"#COLUMN\t{col.Index}\t{col.Width}");
+            }
         }
 
         File.WriteAllText(fileName, sb.ToString());
