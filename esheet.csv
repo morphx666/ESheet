@@ -9,9 +9,13 @@
 'ITBIS	=18%	=SUM(C2..C6)
 'PPLEY	=10%	'Total
 		=C9 * (1 + B9 + B10)
+'Max Budget		
+15000		
 		
-		'Budget
-		=IIF(C11 > 15000, "OVER", "UNDER")
+'Buget Types		'Budget
+="FINE"		=IIF(ABS(C11 - A13) < 0.001, A16, IIF(C11 > A13, A18, A17))
+="UNDER"		
+="OVER"		
 #COLUMN	0	12
 #COLUMN	1	12
 #COLUMN	2	21

@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 internal class Cell(Sheet sheet, int col, int row) {
     private string value = "";
     private (double Val, string? Str) valueEvaluated = (0, null);
@@ -170,7 +168,7 @@ internal class Cell(Sheet sheet, int col, int row) {
         return formula;
     }
 
-    internal string ExtractStrings(string formula) {
+    internal static string ExtractStrings(string formula) {
         Eval.Strings.Clear();
 
         int p0 = formula.IndexOf('"');
