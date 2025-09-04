@@ -210,6 +210,7 @@ internal class Cell(Sheet sheet, int col, int row) {
                 if(cell == null) {
                     (bool IsValid, int Column, int Row) = sheet.IsCellNameValid(name);
                     if(IsValid) {
+                        // This makes the highlighting of dependent cells look nice but causes problems with Sheet.LoadFile()
                         cell = new(sheet, Column, Row) { Value = "" };
                         sheet.Cells.Add(cell);
                     } else {
@@ -245,5 +246,10 @@ internal class Cell(Sheet sheet, int col, int row) {
         // TODO: Check for circular references
         // TODO: Should we reset the hasError flag here?
         return result;
+    }
+
+    public override string ToString() {
+        //return $"Cell {sheet.GetCellName(Column, Row)}: Type={Type}, Value='{Value}', ValueEvaluated=({ValueEvaluated.Val}, '{ValueEvaluated.Str}'), HasError={HasError}, ErrorMessage='{ErrorMessage}'";
+        return $"Cell ({Row}, {Column}): '{Value}'";
     }
 }

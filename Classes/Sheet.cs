@@ -1,5 +1,6 @@
 #pragma warning disable IDE0039
 
+using System.Diagnostics;
 using System.Text;
 
 internal partial class Sheet {
@@ -351,11 +352,8 @@ MainLoop:
 
                         case ConsoleKey.N:
                             if(workingMode == Modes.File) {
-                                Cells.Clear();
+                                ResetSheet();
                                 FileName = "esheet.csv";
-                                userInput = "";
-                                editCursorPosition = 0;
-                                workingMode = Modes.Default;
                             } else goto handleFileModeKeyStroke;
                             break;
 
@@ -378,11 +376,7 @@ MainLoop:
                         case ConsoleKey.Enter:
                             switch(workingMode) {
                                 case Modes.FileLoad:
-                                    if(LoadFile(userInput)) {
-                                        workingMode = Modes.Default;
-                                        userInput = "";
-                                        editCursorPosition = 0;
-                                    }
+                                    LoadFile(userInput);
                                     break;
 
                                 case Modes.FileSave:
@@ -644,22 +638,43 @@ handleFileModeKeyStroke:
         }
     }
 
+    private void ResetSheet() {
+        Cells.Clear();
+        Columns.Clear();
+
+        userInput = "";
+        editCursorPosition = 0;
+        workingMode = Modes.Default;
+
+        //StartColumn = 0;
+        //SelColumn = 0;
+        //StartRow = 0;
+        //SelRow = 0;
+    }
+
     public bool LoadFile(string fileName) {
         if(File.Exists(fileName)) {
-            Cells.Clear();
+            ResetSheet();
             string[] lines = File.ReadAllLines(fileName);
             for(int r = 0; r < lines.Length; r++) {
                 string[] values = lines[r].Split('\t');
-                for(int c = 0; c < values.Length; c++) {
-                    if(values[c].Trim() != "") {
-                        if(values[c] == "#COLUMN") {
-                            int colIndex = int.Parse(values[c + 1]);
-                            int colWidth = int.Parse(values[c + 2]);
-                            Column column = new() { Index = colIndex, Width = colWidth };
-                            Columns.Add(column);
-                            break; // Only one #COLUMN directive per line is allowed
-                        } else {
-                            Cell cell = new(this, c, r, values[c]);
+                if(values[0] == "#COLUMN") {
+                    int colIndex = int.Parse(values[1]);
+                    int colWidth = int.Parse(values[2]);
+                    Column column = new() { Index = colIndex, Width = colWidth };
+                    Columns.Add(column);
+                } else {
+                    for(int c = 0; c < values.Length; c++) {
+                        if(values[c].Trim() != "") {
+                            // When loading cells that contain references to other cells than haven't been loaded yet,
+                            // Cell.Evaluate() will create them with an empty value, messing up the sheet.
+                            // This is why we first check if it exists, and only create it if it doesn't.
+                            Cell? cell = GetCell(c, r);
+                            if(cell is null) {
+                                cell = new(this, c, r, values[c]);
+                            } else {
+                                cell.Value = values[c];
+                            }
                             Cells.Add(cell);
                         }
                     }
@@ -667,12 +682,7 @@ handleFileModeKeyStroke:
             }
 
             FullRefresh();
-
             FileName = fileName;
-            //StartColumn = 0;
-            //SelColumn = 0;
-            //StartRow = 0;
-            //SelRow = 0;
             return true;
         }
         return false;
