@@ -16,14 +16,13 @@
 
         SetColors(ConsoleColor.White, ConsoleColor.Black);
 
-
         Cell? cell = GetCell(sc, sr);
+        WriteLine(cell?.ValueFormat ?? "");
+
         if(cell != null && cell.Type == Cell.Types.Formula) {
             Console.SetCursorPosition(cursorLeft, 0);
             Console.Write(cell.ValueFormat[0]);
             RenderFormula(cell);
-        } else {
-            WriteLine(cell?.ValueFormat ?? "");
         }
 
         RenderHeaders();
