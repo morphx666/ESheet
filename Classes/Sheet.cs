@@ -1,8 +1,6 @@
 #pragma warning disable IDE0039
 
-using System.Text.RegularExpressions;
 using System.Text;
-using System.Diagnostics;
 
 internal partial class Sheet {
     public int StartColumn { get; set; } = 0;
@@ -41,6 +39,8 @@ internal partial class Sheet {
     private readonly int ccCount = 'Z' - 'A' + 1; // 26
     private string userInput = "";
     private int editCursorPosition = 0;
+
+    private static readonly bool isLinux = Environment.OSVersion.Platform == PlatformID.Unix;
 
     enum Modes {
         Invalid,
@@ -113,7 +113,11 @@ MainLoop:
             ConsoleKeyInfo ck = Console.ReadKey(true);
 
             // FIXME: There has to be a way to simplify this mess!
-            bool isCtrl = (ck.Modifiers & ConsoleModifiers.Control) == ConsoleModifiers.Control;
+            bool isOpKey = isLinux
+                            ? (ck.Modifiers & ConsoleModifiers.Alt) == ConsoleModifiers.Alt
+                            : (ck.Modifiers & ConsoleModifiers.Control) == ConsoleModifiers.Control;
+
+            Console.Title = isOpKey.ToString();
             switch(workingMode) {
                 case Modes.Default:
                     switch(ck.Key) {
@@ -187,11 +191,11 @@ MainLoop:
                         default:
                             switch(ck.Key) {
                                 case ConsoleKey.Q:
-                                    if(isCtrl) return;
+                                    if(isOpKey) return;
                                     break;
 
                                 case ConsoleKey.K:
-                                    if(isCtrl) {
+                                    if(isOpKey) {
                                         workingMode = Modes.Sheet;
                                         continue;
                                     }
@@ -231,19 +235,19 @@ MainLoop:
                 case Modes.Formula:
                     switch(ck.Key) {
                         case ConsoleKey.UpArrow:
-                            if(workingMode == Modes.Formula && isCtrl) {
+                            if(workingMode == Modes.Formula && isOpKey) {
                                 if(SelFormulaRow > 0) SelFormulaRow--;
                             }
                             break;
 
                         case ConsoleKey.DownArrow:
-                            if(workingMode == Modes.Formula && isCtrl) {
+                            if(workingMode == Modes.Formula && isOpKey) {
                                 SelFormulaRow++;
                             }
                             break;
 
                         case ConsoleKey.LeftArrow:
-                            if(workingMode == Modes.Formula && isCtrl) {
+                            if(workingMode == Modes.Formula && isOpKey) {
                                 if(SelFormulaColumn > 0) SelFormulaColumn--;
                             } else {
                                 editCursorPosition = Math.Max(workingMode == Modes.Formula ? 1 : 0, editCursorPosition - 1);
@@ -251,7 +255,7 @@ MainLoop:
                             break;
 
                         case ConsoleKey.RightArrow:
-                            if(workingMode == Modes.Formula && isCtrl) {
+                            if(workingMode == Modes.Formula && isOpKey) {
                                 SelFormulaColumn++;
                             } else {
                                 editCursorPosition = Math.Min(userInput.Length, editCursorPosition + 1);
@@ -267,7 +271,7 @@ MainLoop:
                             break;
 
                         case ConsoleKey.Enter:
-                            if(workingMode == Modes.Formula && isCtrl) {
+                            if(workingMode == Modes.Formula && isOpKey) {
                                 string name = GetCellName(SelFormulaColumn, SelFormulaRow);
                                 userInput = userInput[0..editCursorPosition] + name + userInput[editCursorPosition..];
                                 editCursorPosition += name.Length;
@@ -412,7 +416,7 @@ handleFileModeKeyStroke:
                 case Modes.SheetColumn:
                     switch(ck.Key) {
                         case ConsoleKey.LeftArrow:
-                            if(isCtrl) {
+                            if(isOpKey) {
                                 InsertColumn(SelColumn + StartColumn, -1);
                             } else {
                                 if(SelColumn > 0) SelColumn--;
@@ -420,7 +424,7 @@ handleFileModeKeyStroke:
                             break;
 
                         case ConsoleKey.RightArrow:
-                            if(isCtrl) {
+                            if(isOpKey) {
                                 InsertColumn(SelColumn + StartColumn, 1);
                             } else {
                                 SelColumn++;
@@ -428,7 +432,7 @@ handleFileModeKeyStroke:
                             break;
 
                         case ConsoleKey.UpArrow:
-                            if(isCtrl) {
+                            if(isOpKey) {
                                 InsertRow(SelRow + StartRow, -1);
                             } else {
                                 if(SelRow > 0) SelRow--;
@@ -436,7 +440,7 @@ handleFileModeKeyStroke:
                             break;
 
                         case ConsoleKey.DownArrow:
-                            if(isCtrl) {
+                            if(isOpKey) {
                                 InsertRow(SelRow + StartRow, 1);
                             } else {
                                 SelRow++;
@@ -452,11 +456,11 @@ handleFileModeKeyStroke:
                             break;
 
                         case ConsoleKey.OemPlus:
-                            if(isCtrl) SetColumnWidth(SelColumn + StartColumn, 1);
+                            if(isOpKey) SetColumnWidth(SelColumn + StartColumn, 1);
                             break;
 
                         case ConsoleKey.OemMinus:
-                            if(isCtrl) SetColumnWidth(SelColumn + StartColumn, -1);
+                            if(isOpKey) SetColumnWidth(SelColumn + StartColumn, -1);
                             break;
 
                         case ConsoleKey.C:

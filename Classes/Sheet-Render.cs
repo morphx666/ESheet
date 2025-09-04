@@ -64,7 +64,11 @@
             Console.Write("[");
 
             SetColors(ConsoleColor.DarkGreen, ConsoleColor.Black);
-            Console.Write($"{Key}");
+            if(isLinux) {
+                Console.Write($"{Key.Replace('^', '_')}");
+            } else {
+                Console.Write($"{Key}");
+            }
 
             SetColors(ConsoleColor.DarkGray, ConsoleColor.Black);
             Console.Write("] ");
