@@ -481,7 +481,7 @@ handleFileModeKeyStroke:
     private void CascadeUpdate(string name) {
         List<string> cellsToUpdate = [];
         foreach(Cell c in Cells.ToArray()) { // Silly way to create a copy of the Cells collection and avoid "Collection was modified" exception
-            if(c.Type == Cell.Types.Formula && c.ExpandRanges(c.Value).Contains(name)) {
+            if(!c.HasError && c.Type == Cell.Types.Formula && c.ExpandRanges(c.Value).Contains(name)) {
                 c.Refresh();
                 string cellToUpdate = GetCellName(c);
                 cellsToUpdate.Add(cellToUpdate);
@@ -581,7 +581,7 @@ handleFileModeKeyStroke:
         }
     }
 
-    private void FullRefresh() {
+    internal void FullRefresh() {
         Cells.ForEach(c => {
             if(c.Type == Cell.Types.Formula) c.Refresh();
         });

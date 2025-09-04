@@ -1,3 +1,5 @@
+using System.Linq;
+
 internal class Cell(Sheet sheet, int col, int row) {
     private string value = "";
     private (double Val, string? Str) valueEvaluated = (0, null);
@@ -40,6 +42,7 @@ internal class Cell(Sheet sheet, int col, int row) {
     public string Value {
         get => value;
         set {
+            bool hadError = hasError;
             hasError = false;
             this.value = value;
             if(value != "") {
@@ -61,6 +64,7 @@ internal class Cell(Sheet sheet, int col, int row) {
                         UpdateType();
                         break;
                 }
+                if(hadError) sheet.FullRefresh();
             }
         }
     }
@@ -218,19 +222,16 @@ internal class Cell(Sheet sheet, int col, int row) {
                         errorMessage = $"Unrecognized cell '{name}'";
                         return (0, null);
                     }
-                }
-
-                if(cell.Type == Types.Label) {
+                } else if(cell.Type == Types.Label) {
                     hasError = true;
                     errorMessage = $"Invalid cell type '{name}'";
                     return (0, null);
-                }
-
-                if(cell.HasError) {
+                } else if(cell.HasError) {
                     hasError = true;
                     errorMessage = ex.Message;
                     return (0, null);
                 }
+
                 if(cell.ValueEvaluated.Str is not null) {
                     Eval.Formula = ExtractStrings(cell.ValueEvaluated.Str);
                 }
@@ -244,6 +245,12 @@ internal class Cell(Sheet sheet, int col, int row) {
         }
 
         // TODO: Check for circular references
+        if(Eval.CustomParameters.ContainsKey(sheet.GetCellName(this))) {
+            hasError = true;
+            errorMessage = "Circular reference";
+            return (0, null);
+        }
+
         // TODO: Should we reset the hasError flag here?
         return result;
     }
