@@ -1,6 +1,6 @@
 #pragma warning disable IDE0039
 
-using System.Diagnostics;
+using System.Text.RegularExpressions;
 using System.Text;
 
 internal partial class Sheet {
@@ -594,6 +594,12 @@ handleFileModeKeyStroke:
     }
 
     internal void FullRefresh() {
+        List<Cell> emptyCells = Cells.Select(c => c).Where(c => c.Value == "").ToList();
+        while(emptyCells.Count > 0) {
+            Cells.Remove(emptyCells[0]);
+            emptyCells.RemoveAt(0);
+        }
+
         Cells.ForEach(c => {
             if(c.Type == Cell.Types.Formula) c.Refresh();
         });
@@ -603,26 +609,82 @@ handleFileModeKeyStroke:
         Cells.ForEach(c => {
             switch(direction) {
                 case -1:
-                    if(c.Column >= col) c.SetColRow(c.Column + 1, c.Row);
+                    if(c.Column >= col) {
+                        List<string> cellsInFormula = c.ExtractCells().OrderByDescending(n => n).ToList();
+                        foreach(string name in cellsInFormula) {
+                            (int Column, int Row) cell = GetCellColRow(name);
+                            if(cell.Column >= col) {
+                                cell.Column += 1;
+
+                                string newName = GetCellName(cell.Column, cell.Row);
+                                string pattern = $@"\b{Regex.Escape(name)}\b";
+                                c.SetValueFast(Regex.Replace(c.Value, pattern, newName));
+                            }
+                        }
+                        c.SetColRow(c.Column + 1, c.Row);
+                    }
                     break;
                 case 1:
-                    if(c.Column >= col + 1) c.SetColRow(c.Column + 1, c.Row);
+                    if(c.Column >= col + 1) {
+                        List<string> cellsInFormula = c.ExtractCells().OrderByDescending(n => n).ToList();
+                        foreach(string name in cellsInFormula) {
+                            (int Column, int Row) cell = GetCellColRow(name);
+                            if(cell.Column >= col + 1) {
+                                cell.Column += 1;
+
+                                string newName = GetCellName(cell.Column, cell.Row);
+                                string pattern = $@"\b{Regex.Escape(name)}\b";
+                                c.SetValueFast(Regex.Replace(c.Value, pattern, newName));
+                            }
+                        }
+                        c.SetColRow(c.Column + 1, c.Row);
+                    }
                     break;
             }
         });
+
+        FullRefresh();
     }
 
     private void DeleteColumn(int col) {
         Cells.RemoveAll(c => c.Column == col);
         Cells.ForEach(c => {
-            if(c.Column > col) c.SetColRow(c.Column - 1, c.Row);
+            if(c.Column > col) {
+                List<string> cellsInFormula = c.ExtractCells().OrderByDescending(n => n).ToList();
+                foreach(string name in cellsInFormula) {
+                    (int Column, int Row) cell = GetCellColRow(name);
+                    if(cell.Column > col) {
+                        cell.Column -= 1;
+
+                        string newName = GetCellName(cell.Column, cell.Row);
+                        string pattern = $@"\b{Regex.Escape(name)}\b";
+                        c.SetValueFast(Regex.Replace(c.Value, pattern, newName));
+                    }
+                }
+                c.SetColRow(c.Column - 1, c.Row);
+            }
         });
+
+        FullRefresh();
     }
 
     private void DeleteRow(int row) {
         Cells.RemoveAll(c => c.Row == row);
         Cells.ForEach(c => {
-            if(c.Row > row) c.SetColRow(c.Column, c.Row - 1);
+            if(c.Row > row) {
+                List<string> cellsInFormula = c.ExtractCells().OrderByDescending(n => n).ToList();
+                foreach(string name in cellsInFormula) {
+                    (int Column, int Row) cell = GetCellColRow(name);
+                    if(cell.Row > row) {
+                        cell.Row -= 1;
+
+                        string newName = GetCellName(cell.Column, cell.Row);
+                        string pattern = $@"\b{Regex.Escape(name)}\b";
+                        c.SetValueFast(Regex.Replace(c.Value, pattern, newName));
+                    }
+                }
+                c.SetColRow(c.Column, c.Row - 1);
+            }
         });
     }
 
@@ -630,10 +692,36 @@ handleFileModeKeyStroke:
         Cells.ForEach(c => {
             switch(direction) {
                 case -1:
-                    if(c.Row >= row) c.SetColRow(c.Column, c.Row + 1);
+                    if(c.Row >= row) {
+                        List<string> cellsInFormula = c.ExtractCells().OrderByDescending(n => n).ToList();
+                        foreach(string name in cellsInFormula) {
+                            (int Column, int Row) cell = GetCellColRow(name);
+                            if(cell.Row >= row) {
+                                cell.Row += 1;
+
+                                string newName = GetCellName(cell.Column, cell.Row);
+                                string pattern = $@"\b{Regex.Escape(name)}\b";
+                                c.SetValueFast(Regex.Replace(c.Value, pattern, newName));
+                            }
+                        }
+                        c.SetColRow(c.Column, c.Row + 1);
+                    }
                     break;
                 case 1:
-                    if(c.Row >= row + 1) c.SetColRow(c.Column, c.Row + 1);
+                    if(c.Row >= row + 1) {
+                        List<string> cellsInFormula = c.ExtractCells().OrderByDescending(n => n).ToList();
+                        foreach(string name in cellsInFormula) {
+                            (int Column, int Row) cell = GetCellColRow(name);
+                            if(cell.Row >= row + 1) {
+                                cell.Row += 1;
+
+                                string newName = GetCellName(cell.Column, cell.Row);
+                                string pattern = $@"\b{Regex.Escape(name)}\b";
+                                c.SetValueFast(Regex.Replace(c.Value, pattern, newName));
+                            }
+                        }
+                        c.SetColRow(c.Column, c.Row + 1);
+                    }
                     break;
             }
         });

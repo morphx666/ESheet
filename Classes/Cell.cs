@@ -64,9 +64,13 @@ internal class Cell(Sheet sheet, int col, int row) {
                         UpdateType();
                         break;
                 }
-                if(hadError) sheet.FullRefresh();
+                if(hadError && !hasError) sheet.FullRefresh();
             }
         }
+    }
+
+    internal void SetValueFast(string value) {
+        this.value = value;
     }
 
     public string ValueFormat {
@@ -214,9 +218,9 @@ internal class Cell(Sheet sheet, int col, int row) {
                 if(cell == null) {
                     (bool IsValid, int Column, int Row) = sheet.IsCellNameValid(name);
                     if(IsValid) {
-                        // This makes the highlighting of dependent cells look nice but causes problems with Sheet.LoadFile()
                         cell = new(sheet, Column, Row) { Value = "" };
-                        sheet.Cells.Add(cell);
+                        // This makes the highlighting of dependent cells look nice but causes problems with Sheet.LoadFile()
+                        //sheet.Cells.Add(cell);
                     } else {
                         SetError($"Unrecognized cell '{name}'");
                         return (0, null);
@@ -252,6 +256,27 @@ internal class Cell(Sheet sheet, int col, int row) {
     internal void SetError(string message) {
         hasError = true;
         errorMessage = message;
+    }
+
+    internal List<string> ExtractCells() {
+        List<string> cells = [];
+        if(Type != Types.Formula) return cells;
+
+        for(int i = 0; i < value.Length; i++) {
+            if(char.IsAsciiLetter(value[i])) {
+                string cellName = value[i].ToString();
+                for(int j = i + 1; j < value.Length; j++) {
+                    if(char.IsAsciiLetterOrDigit(value[j])) {
+                        cellName += value[j];
+                    } else {
+                        break;
+                    }
+                }
+                if(char.IsDigit(cellName[^1])) cells.Add(cellName);
+            }
+        }
+
+        return cells;
     }
 
     public override string ToString() {
