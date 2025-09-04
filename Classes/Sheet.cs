@@ -2,6 +2,7 @@
 
 using System.Text.RegularExpressions;
 using System.Text;
+using System.Diagnostics;
 
 internal partial class Sheet {
     public int StartColumn { get; set; } = 0;
@@ -610,15 +611,13 @@ handleFileModeKeyStroke:
             switch(direction) {
                 case -1:
                     if(c.Column >= col) {
-                        List<string> cellsInFormula = c.ExtractCells().OrderByDescending(n => n).ToList();
-                        foreach(string name in cellsInFormula) {
-                            (int Column, int Row) cell = GetCellColRow(name);
+                        int offset = 0;
+                        var cellsInFormula = c.GetReferencedCells();
+                        foreach(var cell in cellsInFormula) {
                             if(cell.Column >= col) {
-                                cell.Column += 1;
-
-                                string newName = GetCellName(cell.Column, cell.Row);
-                                string pattern = $@"\b{Regex.Escape(name)}\b";
-                                c.SetValueFast(Regex.Replace(c.Value, pattern, newName));
+                                string newName = GetCellName(cell.Column + 1, cell.Row);
+                                c.SetValueFast(c.Value[0..(cell.Pos + offset)] + newName + c.Value[(cell.Pos + cell.Name.Length + offset)..]);
+                                offset += newName.Length - cell.Name.Length;
                             }
                         }
                         c.SetColRow(c.Column + 1, c.Row);
@@ -626,15 +625,13 @@ handleFileModeKeyStroke:
                     break;
                 case 1:
                     if(c.Column >= col + 1) {
-                        List<string> cellsInFormula = c.ExtractCells().OrderByDescending(n => n).ToList();
-                        foreach(string name in cellsInFormula) {
-                            (int Column, int Row) cell = GetCellColRow(name);
+                        int offset = 0;
+                        var cellsInFormula = c.GetReferencedCells();
+                        foreach(var cell in cellsInFormula) {
                             if(cell.Column >= col + 1) {
-                                cell.Column += 1;
-
-                                string newName = GetCellName(cell.Column, cell.Row);
-                                string pattern = $@"\b{Regex.Escape(name)}\b";
-                                c.SetValueFast(Regex.Replace(c.Value, pattern, newName));
+                                string newName = GetCellName(cell.Column + 1, cell.Row);
+                                c.SetValueFast(c.Value[0..(cell.Pos + offset)] + newName + c.Value[(cell.Pos + cell.Name.Length + offset)..]);
+                                offset += newName.Length - cell.Name.Length;
                             }
                         }
                         c.SetColRow(c.Column + 1, c.Row);
@@ -650,15 +647,13 @@ handleFileModeKeyStroke:
         Cells.RemoveAll(c => c.Column == col);
         Cells.ForEach(c => {
             if(c.Column > col) {
-                List<string> cellsInFormula = c.ExtractCells().OrderByDescending(n => n).ToList();
-                foreach(string name in cellsInFormula) {
-                    (int Column, int Row) cell = GetCellColRow(name);
+                int offset = 0;
+                var cellsInFormula = c.GetReferencedCells();
+                foreach(var cell in cellsInFormula) {
                     if(cell.Column > col) {
-                        cell.Column -= 1;
-
-                        string newName = GetCellName(cell.Column, cell.Row);
-                        string pattern = $@"\b{Regex.Escape(name)}\b";
-                        c.SetValueFast(Regex.Replace(c.Value, pattern, newName));
+                        string newName = GetCellName(cell.Column - 1, cell.Row);
+                        c.SetValueFast(c.Value[0..(cell.Pos + offset)] + newName + c.Value[(cell.Pos + cell.Name.Length + offset)..]);
+                        offset += newName.Length - cell.Name.Length;
                     }
                 }
                 c.SetColRow(c.Column - 1, c.Row);
@@ -672,20 +667,20 @@ handleFileModeKeyStroke:
         Cells.RemoveAll(c => c.Row == row);
         Cells.ForEach(c => {
             if(c.Row > row) {
-                List<string> cellsInFormula = c.ExtractCells().OrderByDescending(n => n).ToList();
-                foreach(string name in cellsInFormula) {
-                    (int Column, int Row) cell = GetCellColRow(name);
+                int offset = 0;
+                var cellsInFormula = c.GetReferencedCells();
+                foreach(var cell in cellsInFormula) {
                     if(cell.Row > row) {
-                        cell.Row -= 1;
-
-                        string newName = GetCellName(cell.Column, cell.Row);
-                        string pattern = $@"\b{Regex.Escape(name)}\b";
-                        c.SetValueFast(Regex.Replace(c.Value, pattern, newName));
+                        string newName = GetCellName(cell.Column, cell.Row - 1);
+                        c.SetValueFast(c.Value[0..(cell.Pos + offset)] + newName + c.Value[(cell.Pos + cell.Name.Length + offset)..]);
+                        offset += newName.Length - cell.Name.Length;
                     }
                 }
                 c.SetColRow(c.Column, c.Row - 1);
             }
         });
+
+        FullRefresh();
     }
 
     private void InsertRow(int row, int direction) {
@@ -693,15 +688,13 @@ handleFileModeKeyStroke:
             switch(direction) {
                 case -1:
                     if(c.Row >= row) {
-                        List<string> cellsInFormula = c.ExtractCells().OrderByDescending(n => n).ToList();
-                        foreach(string name in cellsInFormula) {
-                            (int Column, int Row) cell = GetCellColRow(name);
+                        int offset = 0;
+                        var cellsInFormula = c.GetReferencedCells();
+                        foreach(var cell in cellsInFormula) {
                             if(cell.Row >= row) {
-                                cell.Row += 1;
-
-                                string newName = GetCellName(cell.Column, cell.Row);
-                                string pattern = $@"\b{Regex.Escape(name)}\b";
-                                c.SetValueFast(Regex.Replace(c.Value, pattern, newName));
+                                string newName = GetCellName(cell.Column, cell.Row + 1);
+                                c.SetValueFast(c.Value[0..(cell.Pos + offset)] + newName + c.Value[(cell.Pos + cell.Name.Length + offset)..]);
+                                offset += newName.Length - cell.Name.Length;
                             }
                         }
                         c.SetColRow(c.Column, c.Row + 1);
@@ -709,15 +702,13 @@ handleFileModeKeyStroke:
                     break;
                 case 1:
                     if(c.Row >= row + 1) {
-                        List<string> cellsInFormula = c.ExtractCells().OrderByDescending(n => n).ToList();
-                        foreach(string name in cellsInFormula) {
-                            (int Column, int Row) cell = GetCellColRow(name);
+                        int offset = 0;
+                        var cellsInFormula = c.GetReferencedCells();
+                        foreach(var cell in cellsInFormula) {
                             if(cell.Row >= row + 1) {
-                                cell.Row += 1;
-
-                                string newName = GetCellName(cell.Column, cell.Row);
-                                string pattern = $@"\b{Regex.Escape(name)}\b";
-                                c.SetValueFast(Regex.Replace(c.Value, pattern, newName));
+                                string newName = GetCellName(cell.Column, cell.Row + 1);
+                                c.SetValueFast(c.Value[0..(cell.Pos + offset)] + newName + c.Value[(cell.Pos + cell.Name.Length + offset)..]);
+                                offset += newName.Length - cell.Name.Length;
                             }
                         }
                         c.SetColRow(c.Column, c.Row + 1);
@@ -725,6 +716,8 @@ handleFileModeKeyStroke:
                     break;
             }
         });
+
+        FullRefresh();
     }
 
     private void SetColumnWidth(int col, int delta) {
@@ -755,6 +748,7 @@ handleFileModeKeyStroke:
     public bool LoadFile(string fileName) {
         if(File.Exists(fileName)) {
             ResetSheet();
+
             string[] lines = File.ReadAllLines(fileName);
             for(int r = 0; r < lines.Length; r++) {
                 string[] values = lines[r].Split('\t');
@@ -766,9 +760,6 @@ handleFileModeKeyStroke:
                 } else {
                     for(int c = 0; c < values.Length; c++) {
                         if(values[c].Trim() != "") {
-                            // When loading cells that contain references to other cells than haven't been loaded yet,
-                            // Cell.Evaluate() will create them with an empty value, messing up the sheet.
-                            // This is why we first check if it exists, and only create it if it doesn't.
                             Cell? cell = GetCell(c, r);
                             if(cell is null) {
                                 cell = new(this, c, r, values[c]);

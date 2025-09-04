@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Linq;
 
 internal class Cell(Sheet sheet, int col, int row) {
@@ -219,8 +220,6 @@ internal class Cell(Sheet sheet, int col, int row) {
                     (bool IsValid, int Column, int Row) = sheet.IsCellNameValid(name);
                     if(IsValid) {
                         cell = new(sheet, Column, Row) { Value = "" };
-                        // This makes the highlighting of dependent cells look nice but causes problems with Sheet.LoadFile()
-                        //sheet.Cells.Add(cell);
                     } else {
                         SetError($"Unrecognized cell '{name}'");
                         return (0, null);
@@ -258,9 +257,9 @@ internal class Cell(Sheet sheet, int col, int row) {
         errorMessage = message;
     }
 
-    internal List<string> ExtractCells() {
-        List<string> cells = [];
-        if(Type != Types.Formula) return cells;
+    internal List<(string Name, int Pos, int Column, int Row)> GetReferencedCells() {
+        if(Type != Types.Formula) return [];
+        List<(string Name, int Pos, int Column, int Row)> cells = [];
 
         for(int i = 0; i < value.Length; i++) {
             if(char.IsAsciiLetter(value[i])) {
@@ -272,7 +271,10 @@ internal class Cell(Sheet sheet, int col, int row) {
                         break;
                     }
                 }
-                if(char.IsDigit(cellName[^1])) cells.Add(cellName);
+                if(char.IsDigit(cellName[^1])) {
+                    (bool IsValid, int Column, int Row) = sheet.IsCellNameValid(cellName);
+                    if(IsValid) cells.Add((cellName, i, Column, Row));
+                }
             }
         }
 
