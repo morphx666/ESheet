@@ -12,14 +12,44 @@
         SetColors(BackHeaderColor, BackCellColor);
         Console.SetCursorPosition(0, 0);
         Console.Write($"{GetColumnName(sc)}{sr + 1}: ");
+        int cursorLeft = Console.CursorLeft;
 
         SetColors(ConsoleColor.White, ConsoleColor.Black);
-        WriteLine(GetCell(sc, sr)?.ValueFormat ?? "");
+
+
+        Cell? cell = GetCell(sc, sr);
+        if(cell != null && cell.Type == Cell.Types.Formula) {
+            Console.SetCursorPosition(cursorLeft, 0);
+            Console.Write(cell.ValueFormat[0]);
+            RenderFormula(cell);
+        } else {
+            WriteLine(cell?.ValueFormat ?? "");
+        }
 
         RenderHeaders();
         RenderSheet();
 
         Console.CursorVisible = true;
+    }
+
+    private static void RenderFormula(Cell cell) {
+        var refCells = cell.GetReferencedCells();
+        for(int i = 0; i < cell.Value.Length; i++) {
+            var refCell = refCells.FirstOrDefault(c => c.Pos == i);
+            if(refCell.Name is not null) {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write(refCell.Name);
+                i += refCell.Name.Length - 1;
+                continue;
+            } else {
+                Console.ForegroundColor = char.IsAsciiLetter(cell.Value[i])
+                                            ? ConsoleColor.Yellow
+                                            : char.IsNumber(cell.Value[i])
+                                                ? ConsoleColor.White
+                                                : ConsoleColor.Magenta;
+                Console.Write(cell.Value[i]);
+            }
+        }
     }
 
     private static void RenderHelp(int c, int r, string title, (string Key, string Action)[] values) {
