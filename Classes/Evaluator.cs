@@ -7,7 +7,7 @@ internal class Evaluator {
     public delegate void CustomFunctionDel(string name, FunctionArgs args);
 
     private string formula = "";
-    private readonly Dictionary<string, double> customParameters = [];
+    private readonly Dictionary<string, (double Val, string? Str)> customParameters = [];
     private CustomFunctionDel? customFunction;
     private Expression? exp;
 
@@ -21,7 +21,7 @@ internal class Evaluator {
 
     public Dictionary<string, object>? Variables { get => exp?.Parameters; }
 
-    public Dictionary<string, double> CustomParameters { get => customParameters; }
+    public Dictionary<string, (double Val, string? Str)> CustomParameters { get => customParameters; }
 
     public Dictionary<int, string> Strings { get => strings; }
 
@@ -87,7 +87,7 @@ internal class Evaluator {
                         args.Result = 299_792_458; // Speed of light in m/s
                         break;
                     default:
-                        if(customParameters.TryGetValue(name, out double value)) args.Result = value;
+                        if(customParameters.TryGetValue(name, out (double Val, string? Str) value)) args.Result = value.Val;
                         break;
                 }
             };

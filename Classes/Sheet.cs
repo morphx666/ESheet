@@ -669,6 +669,10 @@ handleFileModeKeyStroke:
             FullRefresh();
 
             FileName = fileName;
+            //StartColumn = 0;
+            //SelColumn = 0;
+            //StartRow = 0;
+            //SelRow = 0;
             return true;
         }
         return false;

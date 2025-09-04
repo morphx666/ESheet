@@ -213,7 +213,9 @@ internal class Cell(Sheet sheet, int col, int row) {
                         cell = new(sheet, Column, Row) { Value = "" };
                         sheet.Cells.Add(cell);
                     } else {
-                        throw new Exception($"Unrecognized expression '{name}'");
+                        hasError = true;
+                        errorMessage = $"Unrecognized cell '{name}'";
+                        return (0, null);
                     }
                 }
 
@@ -228,7 +230,10 @@ internal class Cell(Sheet sheet, int col, int row) {
                     errorMessage = ex.Message;
                     return (0, null);
                 }
-                Eval.CustomParameters.Add(name, cell.ValueEvaluated.Val);
+                if(cell.ValueEvaluated.Str is not null) {
+                    Eval.Formula = ExtractStrings(cell.ValueEvaluated.Str);
+                }
+                Eval.CustomParameters.Add(name, cell.ValueEvaluated);
                 DependentCells.Add(cell);
             } catch(Exception ex) {
                 hasError = true;
