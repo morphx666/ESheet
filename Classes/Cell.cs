@@ -218,17 +218,14 @@ internal class Cell(Sheet sheet, int col, int row) {
                         cell = new(sheet, Column, Row) { Value = "" };
                         sheet.Cells.Add(cell);
                     } else {
-                        hasError = true;
-                        errorMessage = $"Unrecognized cell '{name}'";
+                        SetError($"Unrecognized cell '{name}'");
                         return (0, null);
                     }
                 } else if(cell.Type == Types.Label) {
-                    hasError = true;
-                    errorMessage = $"Invalid cell type '{name}'";
+                    SetError($"Invalid cell type '{name}'");
                     return (0, null);
                 } else if(cell.HasError) {
-                    hasError = true;
-                    errorMessage = ex.Message;
+                    SetError(ex.Message);
                     return (0, null);
                 }
 
@@ -238,21 +235,23 @@ internal class Cell(Sheet sheet, int col, int row) {
                 Eval.CustomParameters.Add(name, cell.ValueEvaluated);
                 DependentCells.Add(cell);
             } catch(Exception ex) {
-                hasError = true;
-                errorMessage = ex.Message;
+                SetError(ex.Message);
                 return (0, null);
             }
         }
 
-        // TODO: Check for circular references
         if(Eval.CustomParameters.ContainsKey(sheet.GetCellName(this))) {
-            hasError = true;
-            errorMessage = "Circular reference";
+            SetError("Circular reference");
             return (0, null);
         }
 
         // TODO: Should we reset the hasError flag here?
         return result;
+    }
+
+    internal void SetError(string message) {
+        hasError = true;
+        errorMessage = message;
     }
 
     public override string ToString() {

@@ -478,7 +478,19 @@ handleFileModeKeyStroke:
         }
     }
 
-    private void CascadeUpdate(string name) {
+    static int maxRecursion;
+    private void CascadeUpdate(string name, bool init = true) {
+        if(init) {
+            maxRecursion = Cells.Count * 2;
+        } else {
+            maxRecursion--;
+            if(maxRecursion == 0) {
+                maxRecursion = -1;
+                GetCell(name)?.SetError("Circular reference");
+                return;
+            }
+        }
+
         List<string> cellsToUpdate = [];
         foreach(Cell c in Cells.ToArray()) { // Silly way to create a copy of the Cells collection and avoid "Collection was modified" exception
             if(!c.HasError && c.Type == Cell.Types.Formula && c.ExpandRanges(c.Value).Contains(name)) {
@@ -488,7 +500,7 @@ handleFileModeKeyStroke:
             }
         }
 
-        cellsToUpdate.ForEach(c => CascadeUpdate(c));
+        cellsToUpdate.ForEach(c => CascadeUpdate(c, false));
     }
 
     internal Cell? GetCell(int col, int row) {
