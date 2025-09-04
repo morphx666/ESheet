@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 internal class Cell(Sheet sheet, int col, int row) {
     private string value = "";
     private (double Val, string? Str) valueEvaluated = (0, null);
@@ -219,11 +221,11 @@ internal class Cell(Sheet sheet, int col, int row) {
                     }
                 }
 
-                //TODO: Do something here, b/c we cannot have Label type cells as part of a formula
-                //      Unless we add string manipulation functions??? hmmm...
-                //if(cell.Type == Types.Label) {
-                //    break;
-                //}
+                if(cell.Type == Types.Label) {
+                    hasError = true;
+                    errorMessage = $"Invalid cell type '{name}'";
+                    return (0, null);
+                }
 
                 if(cell.HasError) {
                     hasError = true;
