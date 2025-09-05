@@ -203,9 +203,10 @@ internal class Cell(Sheet sheet, int col, int row) {
         DependentCells.Clear();
         Eval.CustomParameters.Clear();
 
-        GetReferencedCells().Select(rc => rc.Name).Distinct().ToList().ForEach(rc => {
+        GetReferencedCells(true).Select(rc => rc.Name).Distinct().ToList().ForEach(rc => {
             Cell? cell = sheet.GetCell(rc);
             if(cell == null) {
+                (bool IsValid, int Column, int Row) = sheet.IsCellNameValid(rc);
                 cell = new(sheet, Column, Row) { Value = "" };
             } else if(cell.Type == Types.Label) {
                 SetError($"Invalid cell type '{rc}'");
@@ -235,11 +236,11 @@ internal class Cell(Sheet sheet, int col, int row) {
         errorMessage = message;
     }
 
-    internal List<(string Name, int Pos, int Column, int Row)> GetReferencedCells() {
+    internal List<(string Name, int Pos, int Column, int Row)> GetReferencedCells(bool expandRanges = false) {
         if(Type != Types.Formula) return [];
         List<(string Name, int Pos, int Column, int Row)> cells = [];
 
-        string formula = ExpandRanges(value);
+        string formula = expandRanges ? ExpandRanges(value) : value;
 
         for(int i = 0; i < formula.Length; i++) {
             if(char.IsAsciiLetter(formula[i])) {
