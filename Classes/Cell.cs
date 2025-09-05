@@ -231,11 +231,6 @@ internal class Cell(Sheet sheet, int col, int row) {
         return hasError ? (0, null) : Eval.Evaluate();
     }
 
-    internal void SetError(string message) {
-        hasError = true;
-        errorMessage = message;
-    }
-
     internal List<(string Name, int Pos, int Column, int Row)> GetReferencedCells(bool expandRanges = false) {
         if(Type != Types.Formula) return [];
         List<(string Name, int Pos, int Column, int Row)> cells = [];
@@ -260,6 +255,11 @@ internal class Cell(Sheet sheet, int col, int row) {
         }
 
         return cells;
+    }
+
+    internal void SetError(string message) {
+        hasError = true;
+        errorMessage = message;
     }
 
     public override string ToString() {
