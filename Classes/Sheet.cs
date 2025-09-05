@@ -787,18 +787,22 @@ handleFileModeKeyStroke:
         if(fileName == "") return false;
         StringBuilder sb = new();
 
-        int maxColumn = Cells.Max(c => c.Column);
         int maxRow = Cells.Max(c => c.Row);
 
         for(int r = 0; r <= maxRow; r++) {
-            for(int c = 0; c <= maxColumn; c++) {
-                Cell? cell = GetCell(c, r);
-                if(cell == null) {
-                    sb.Append("");
-                } else {
-                    sb.Append(cell.ValueFormat);
+            var cellsInRow = Cells.Where(c => c.Row == r);
+            if(cellsInRow.Any()) {
+                int maxColumn = cellsInRow.Max(c => c.Column);
+
+                for(int c = 0; c <= maxColumn; c++) {
+                    Cell? cell = GetCell(c, r);
+                    if(cell == null) {
+                        sb.Append("");
+                    } else {
+                        sb.Append(cell.ValueFormat);
+                    }
+                    if(c < maxColumn) sb.Append('\t');
                 }
-                if(c < maxColumn) sb.Append('\t');
             }
             sb.AppendLine();
         }
