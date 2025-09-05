@@ -200,56 +200,34 @@ internal class Cell(Sheet sheet, int col, int row) {
     }
 
     private (double Val, string? Str) Evaluate() {
-        (double Val, string? Str) result;
         DependentCells.Clear();
-
         Eval.CustomParameters.Clear();
-        while(true) {
-            try {
-                result = Eval.Evaluate();
-                break;
-            } catch(ArgumentException ex) when(ex.ParamName is not null) {
-                string name = ex.ParamName;
-                if((name.StartsWith('"') && name.EndsWith('"')) ||
-                   (name.StartsWith('\'') && name.EndsWith('\''))) {
-                    return (0, null);
-                }
 
-                Cell? cell = sheet.GetCell(name);
-                if(cell == null) {
-                    (bool IsValid, int Column, int Row) = sheet.IsCellNameValid(name);
-                    if(IsValid) {
-                        cell = new(sheet, Column, Row) { Value = "" };
-                    } else {
-                        SetError($"Unrecognized cell '{name}'");
-                        return (0, null);
-                    }
-                } else if(cell.Type == Types.Label) {
-                    SetError($"Invalid cell type '{name}'");
-                    return (0, null);
-                } else if(cell.HasError) {
-                    SetError(ex.Message);
-                    return (0, null);
-                }
-
-                if(cell.ValueEvaluated.Str is not null) {
-                    Eval.Formula = ExtractStrings(cell.ValueEvaluated.Str);
-                }
-                Eval.CustomParameters.Add(name, cell.ValueEvaluated);
-                DependentCells.Add(cell);
-            } catch(Exception ex) {
-                SetError(ex.Message);
-                return (0, null);
+        GetReferencedCells().Select(rc => rc.Name).Distinct().ToList().ForEach(rc => {
+            Cell? cell = sheet.GetCell(rc);
+            if(cell == null) {
+                cell = new(sheet, Column, Row) { Value = "" };
+            } else if(cell.Type == Types.Label) {
+                SetError($"Invalid cell type '{rc}'");
+                return;
+            } else if(cell.HasError) {
+                SetError(cell.errorMessage);
+                return;
             }
-        }
+
+            if(cell.ValueEvaluated.Str is not null) {
+                Eval.Formula = ExtractStrings(cell.ValueEvaluated.Str);
+            }
+            Eval.CustomParameters.Add(rc, cell.ValueEvaluated);
+            DependentCells.Add(cell);
+        });
 
         if(Eval.CustomParameters.ContainsKey(sheet.GetCellName(this))) {
             SetError("Circular reference");
             return (0, null);
         }
 
-        // TODO: Should we reset the hasError flag here?
-        return result;
+        return hasError ? (0, null) : Eval.Evaluate();
     }
 
     internal void SetError(string message) {
@@ -261,12 +239,14 @@ internal class Cell(Sheet sheet, int col, int row) {
         if(Type != Types.Formula) return [];
         List<(string Name, int Pos, int Column, int Row)> cells = [];
 
-        for(int i = 0; i < value.Length; i++) {
-            if(char.IsAsciiLetter(value[i])) {
-                string cellName = value[i].ToString();
-                for(int j = i + 1; j < value.Length; j++) {
-                    if(char.IsAsciiLetterOrDigit(value[j])) {
-                        cellName += value[j];
+        string formula = ExpandRanges(value);
+
+        for(int i = 0; i < formula.Length; i++) {
+            if(char.IsAsciiLetter(formula[i])) {
+                string cellName = formula[i].ToString();
+                for(int j = i + 1; j < formula.Length; j++) {
+                    if(char.IsAsciiLetterOrDigit(formula[j])) {
+                        cellName += formula[j];
                     } else {
                         break;
                     }
