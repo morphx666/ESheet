@@ -36,9 +36,11 @@ internal class Evaluator {
     }
 
     delegate object MathFunc(FunctionArgs x);
-    private readonly List<MathFuncDef> functions;
+    private static List<MathFuncDef> functions = null!;
+    public static string[] FunctionNames { get => functions.Select(f => f.Name).ToArray(); }
 
     public Evaluator() {
+        if(functions != null) return;
         functions = [
             new() { Name = "ABS",   MinParamCount = 1, Func = args => Math.Abs(Convert.ToDouble(args.Parameters[0].Evaluate())), Description = "Calculates the absolute value of parameter" },
             new() { Name = "AVG",   MinParamCount = 2, Func = args => args.Parameters.Average(p => Convert.ToDouble(p.Evaluate())), Description = "Calculates the average (arithmetic mean) of parameters" },

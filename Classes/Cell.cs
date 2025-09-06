@@ -254,6 +254,7 @@ internal class Cell(Sheet sheet, int col, int row) {
                 if(char.IsDigit(cellName[^1])) {
                     (bool IsValid, int Column, int Row) = sheet.IsCellNameValid(cellName);
                     if(IsValid) cells.Add((cellName, i, Column, Row));
+                    i += cellName.Length - 1;
                 }
             }
         }

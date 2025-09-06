@@ -1,4 +1,23 @@
 ﻿internal partial class Sheet {
+    public ConsoleColor ForeCellColor { get; set; } = ConsoleColor.White;
+    public ConsoleColor ForeCellErrorColor { get; set; } = ConsoleColor.Red;
+    public ConsoleColor BackCellColor { get; set; } = ConsoleColor.Black;
+    public ConsoleColor BackCellFormulaSelColor { get; set; } = ConsoleColor.Red;
+    public ConsoleColor ForeHeaderColor { get; set; } = ConsoleColor.Black;
+    public ConsoleColor BackHeaderColor { get; set; } = ConsoleColor.Cyan;
+    public ConsoleColor BackHeaderSelColor { get; set; } = ConsoleColor.DarkCyan;
+    public ConsoleColor ForeSelCellColor { get; set; } = ConsoleColor.White;
+    public ConsoleColor BackSelCellColor { get; set; } = ConsoleColor.Blue;
+
+    public ConsoleColor DefaultForeColor { get; set; } = ConsoleColor.White;
+    public ConsoleColor DefaultBackColor { get; set; } = ConsoleColor.Black;
+
+    public ConsoleColor FormulaRefCell { get; set; } = ConsoleColor.Green;
+    public ConsoleColor FormulaFunction { get; set; } = ConsoleColor.Yellow;
+    public ConsoleColor FormulaSymbol { get; set; } = ConsoleColor.Magenta;
+
+    public ConsoleColor BackRefCell { get; set; } = ConsoleColor.DarkGray;
+
     public void Render() {
         int sc = workingMode == Modes.Formula ? SelFormulaColumn : SelColumn;
         int sr = workingMode == Modes.Formula ? SelFormulaRow : SelRow;
@@ -14,7 +33,7 @@
         Console.Write($"{GetColumnName(sc)}{sr + 1}: ");
         int cursorLeft = Console.CursorLeft;
 
-        SetColors(ConsoleColor.White, ConsoleColor.Black);
+        SetColors(DefaultForeColor, DefaultBackColor);
 
         Cell? cell = GetCell(sc, sr);
         WriteLine(cell?.ValueFormat ?? "");
@@ -31,63 +50,61 @@
         Console.CursorVisible = true;
     }
 
-    private static void RenderFormula(Cell cell) {
+    private void RenderFormula(Cell cell) {
         var refCells = cell.GetReferencedCells();
         for(int i = 0; i < cell.Value.Length; i++) {
             var refCell = refCells.FirstOrDefault(c => c.Pos == i);
             if(refCell.Name is not null) {
-                Console.ForegroundColor = ConsoleColor.Green;
+                Console.ForegroundColor = FormulaRefCell;
                 Console.Write(refCell.Name);
                 i += refCell.Name.Length - 1;
                 continue;
             } else {
                 Console.ForegroundColor = char.IsAsciiLetter(cell.Value[i])
-                                            ? ConsoleColor.Yellow
+                                            ? FormulaFunction
                                             : char.IsNumber(cell.Value[i])
-                                                ? ConsoleColor.White
-                                                : ConsoleColor.Magenta;
+                                                ? DefaultForeColor
+                                                : FormulaSymbol;
                 Console.Write(cell.Value[i]);
             }
         }
     }
 
-    private static void RenderHelp(int c, int r, string title, (string Key, string Action)[] values) {
+    private void RenderHelp(int c, int r, string title, (string Key, string Action)[] values) {
         Console.SetCursorPosition(c, r);
 
-        SetColors(ConsoleColor.Yellow, ConsoleColor.Black);
+        SetColors(ConsoleColor.Yellow, DefaultBackColor);
         Console.Write($"{title}: ");
 
         int count = values.Length;
         foreach((string Key, string Action) in values) {
-            SetColors(ConsoleColor.DarkGray, ConsoleColor.Black);
+            SetColors(ConsoleColor.DarkGray, DefaultBackColor);
             Console.Write("[");
 
-            SetColors(ConsoleColor.DarkGreen, ConsoleColor.Black);
+            SetColors(ConsoleColor.DarkGreen, DefaultBackColor);
             if(isLinux) {
                 Console.Write($"{Key.Replace('^', '_')}");
             } else {
                 Console.Write($"{Key}");
             }
 
-            SetColors(ConsoleColor.DarkGray, ConsoleColor.Black);
+            SetColors(ConsoleColor.DarkGray, DefaultBackColor);
             Console.Write("] ");
 
-            SetColors(ConsoleColor.DarkYellow, ConsoleColor.Black);
+            SetColors(ConsoleColor.DarkYellow, DefaultBackColor);
             Console.Write($"{Action}");
 
             if(--count > 0) {
-                SetColors(ConsoleColor.DarkGray, ConsoleColor.Black);
+                SetColors(ConsoleColor.DarkGray, DefaultBackColor);
                 Console.Write(" | ");
             }
         }
 
-        SetColors(ConsoleColor.Black, ConsoleColor.Black);
+        SetColors(DefaultBackColor, DefaultBackColor);
         Console.Write(" ".PadLeft(Console.WindowWidth - Console.CursorLeft));
     }
 
     private void RenderHeaders() {
-        SetColors(ConsoleColor.DarkGray, BackCellColor);
-
         if(lastWorkingMode != workingMode) {
             RenderHelp(OffsetLeft, OffsetTop - 1, WorkingModeToString(), helpMessages[WorkingModeToKey()]);
             lastWorkingMode = workingMode;
@@ -147,10 +164,10 @@ ReStart:
             if((col == SelColumn - StartColumn) && (row == SelRow - StartRow)) {
                 SetColors(ForeSelCellColor, BackSelCellColor);
             } else if((workingMode == Modes.Formula) && (col == SelFormulaColumn - StartColumn) && (row == SelFormulaRow - StartRow)) {
-                SetColors(ConsoleColor.White, ConsoleColor.Red);
+                SetColors(DefaultForeColor, BackCellFormulaSelColor);
             } else {
                 if(cell?.HasError ?? false) {
-                    SetColors(ConsoleColor.Red, BackCellColor);
+                    SetColors(ForeCellErrorColor, BackCellColor);
                 } else {
                     SetColors(ForeCellColor, BackCellColor);
                 }
@@ -212,7 +229,7 @@ ReStart:
                         ConsoleColor fc = Console.ForegroundColor;
                         ConsoleColor bc = Console.BackgroundColor;
 
-                        SetColors(fc, ConsoleColor.DarkGray);
+                        SetColors(fc, BackRefCell);
                         Console.SetCursorPosition(SheetColumnToConsoleColumn(ac.Column), OffsetTop + ac.Row + 1);
                         Console.Write(acResult);
 
@@ -221,13 +238,13 @@ ReStart:
                 }
             }
 
-            if(cell is not null && dependentCells.Contains(cell)) SetColors(ForeCellColor, ConsoleColor.DarkGray);
+            if(cell is not null && dependentCells.Contains(cell)) SetColors(ForeCellColor, BackRefCell);
 
             Console.SetCursorPosition(OffsetLeft + cc, OffsetTop + row + 1);
             Console.Write(result.Text);
 
             if((col == SelColumn - StartColumn) && (row == SelRow - StartRow) && (cell?.HasError ?? false)) {
-                SetColors(ConsoleColor.Red, BackCellColor);
+                SetColors(ForeCellErrorColor, BackCellColor);
                 Console.SetCursorPosition(Console.WindowWidth - cell.ErrorMessage.Length - 1, 0);
                 Console.Write(cell.ErrorMessage);
             }

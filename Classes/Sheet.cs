@@ -19,14 +19,6 @@ internal partial class Sheet {
 
     public int RenderPrecision { get; set; } = 2;
 
-    public ConsoleColor ForeCellColor { get; set; } = ConsoleColor.White;
-    public ConsoleColor BackCellColor { get; set; } = ConsoleColor.Black;
-    public ConsoleColor ForeHeaderColor { get; set; } = ConsoleColor.Black;
-    public ConsoleColor BackHeaderColor { get; set; } = ConsoleColor.Cyan;
-    public ConsoleColor BackHeaderSelColor { get; set; } = ConsoleColor.DarkCyan;
-    public ConsoleColor ForeSelCellColor { get; set; } = ConsoleColor.White;
-    public ConsoleColor BackSelCellColor { get; set; } = ConsoleColor.Blue;
-
     private string fileName = "esheet.csv";
     public string FileName {
         get => fileName;
@@ -591,6 +583,7 @@ handleFileModeKeyStroke:
 
     internal (bool IsValid, int Column, int Row) IsCellNameValid(string name) {
         try {
+            if(Evaluator.FunctionNames.Contains(name.ToUpper())) return (false, -1, -1);
             (int Column, int Row) = GetCellColRow(name);
             return (true, Column, Row);
         } catch {
