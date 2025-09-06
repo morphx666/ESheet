@@ -1,4 +1,5 @@
 ﻿using NCalc;
+using System.ComponentModel;
 
 internal class Evaluator {
     public const double Infinity = 10 ^ 6;
@@ -25,6 +26,58 @@ internal class Evaluator {
 
     public Dictionary<int, string> Strings { get => strings; }
 
+    class MathFuncDef {
+        public string Name { get; set; } = "";
+        public int MinParamCount { get; set; } = 0; // -1 for variable number of parameters
+        public MathFunc Func { get; set; } = null;
+        public string Description { get; set; } = "";
+
+        public MathFuncDef() { }
+    }
+
+    delegate object MathFunc(FunctionArgs x);
+    private readonly List<MathFuncDef> functions;
+
+    public Evaluator() {
+        functions = [
+            new() { Name = "ABS",   MinParamCount = 1, Func = args => Math.Abs(Convert.ToDouble(args.Parameters[0].Evaluate())), Description = "Calculates the absolute value of parameter" },
+            new() { Name = "AVG",   MinParamCount = 2, Func = args => args.Parameters.Average(p => Convert.ToDouble(p.Evaluate())), Description = "Calculates the average (arithmetic mean) of parameters" },
+            new() { Name = "COS",   MinParamCount = 1, Func = args => Math.Cos(Convert.ToDouble(args.Parameters[0].Evaluate())), Description = "Calculates the cosine of parameter (in radians)" },
+            new() { Name = "EXP",   MinParamCount = 1, Func = args => Math.Exp(Convert.ToDouble(args.Parameters[0].Evaluate())), Description = "Calculates e raised to the power of parameter" },
+            new() { Name = "IIF",   MinParamCount = 3, Func = args => Convert.ToBoolean(args.Parameters[0].Evaluate()) ? args.Parameters[1].Evaluate() : args.Parameters[2].Evaluate(), Description = "If the first parameter is true, returns the second parameter, otherwise the third parameter" },
+            new() { Name = "INT",   MinParamCount = 1, Func = args => Math.Floor(Convert.ToDouble(args.Parameters[0].Evaluate())), Description = "Calculates the integer part of parameter" },
+            new() { Name = "LN",    MinParamCount = 1, Func = args => Math.Log(Convert.ToDouble(args.Parameters[0].Evaluate())), Description = "Calculates the natural logarithm of parameter" },
+            new() { Name = "LOG10", MinParamCount = 1, Func = args => Math.Log10(Convert.ToDouble(args.Parameters[0].Evaluate())), Description = "Calculates the base-10 logarithm of parameter" },
+            new() { Name = "LOG2",  MinParamCount = 1, Func = args => Math.Log2(Convert.ToDouble(args.Parameters[0].Evaluate())), Description = "Calculates the base-2 logarithm of parameter" },
+            new() { Name = "MAX",   MinParamCount = 2, Func = args => args.Parameters.Max(p => Convert.ToDouble(p.Evaluate())), Description = "Calculates the maximum value of parameters" },
+            new() { Name = "MIN",   MinParamCount = 2, Func = args => args.Parameters.Min(p => Convert.ToDouble(p.Evaluate())), Description = "Calculates the minimum value of parameters" },
+            new() { Name = "MOD",   MinParamCount = 2, Func = args => Convert.ToDouble(args.Parameters[0].Evaluate()) % Convert.ToDouble(args.Parameters[1].Evaluate()), Description = "Calculates the modulus of two parameters" },
+            new() { Name = "POW",   MinParamCount = 2, Func = args => Math.Pow(Convert.ToDouble(args.Parameters[0].Evaluate()), Convert.ToDouble(args.Parameters[1].Evaluate())), Description = "Calculates the power of the first parameter raised to the second parameter" },
+            new() { Name = "RAND",  MinParamCount = 0, Func = args => new Random().NextDouble(), Description = "Generates a random number between 0 and 1" },
+            new() { Name = "SIN",   MinParamCount = 1, Func = args => Math.Sin(Convert.ToDouble(args.Parameters[0].Evaluate())), Description = "Calculates the sine of parameter (in radians)" },
+            new() { Name = "SQRT",  MinParamCount = 1, Func = args => Math.Sqrt(Convert.ToDouble(args.Parameters[0].Evaluate())), Description = "Calculates the square root of parameter" },
+            new() { Name = "STD",   MinParamCount = 2, Func = args => {
+                    double mean = args.Parameters.Average(p => Convert.ToDouble(p.Evaluate()));
+                    double sumOfSquares = args.Parameters.Select(v => Math.Pow(Convert.ToDouble(v.Evaluate()) - mean, 2)).Sum();
+                    return Math.Sqrt(sumOfSquares / args.Parameters.Length);
+                },
+                Description = "Calculates the standard deviation of parameters"
+            },
+            new() { Name = "STDS",  MinParamCount = 2, Func = args => {
+                    double mean = args.Parameters.Average(p => Convert.ToDouble(p.Evaluate()));
+                    double sumOfSquares = args.Parameters.Select(v => Math.Pow(Convert.ToDouble(v.Evaluate()) - mean, 2)).Sum();
+                    return Math.Sqrt(sumOfSquares / (args.Parameters.Length - 1));
+                },
+                Description = "Calculates the sample standard deviation of parameters"
+            },
+            new() { Name = "STR",   MinParamCount = 1, Func = args =>  strings[Convert.ToInt32(args.Parameters[0].Evaluate())], Description = "Retrieves the string at the specified index" },
+            new() { Name = "SUM",   MinParamCount = 2, Func = args => args.Parameters.Sum(p => Convert.ToDouble(p.Evaluate())), Description = "Calculates the sum of parameters" },
+            new() { Name = "TAN",   MinParamCount = 1, Func = args => Math.Tan(Convert.ToDouble(args.Parameters[0].Evaluate())), Description = "Calculates the tangent of parameter (in radians)" },
+            new() { Name = "TODEG", MinParamCount = 1, Func = args => Convert.ToDouble(args.Parameters[0].Evaluate()) / ToRad, Description = "Converts radians to degrees" },
+            new() { Name = "TORAD", MinParamCount = 1, Func = args => Convert.ToDouble(args.Parameters[0].Evaluate()) * ToRad, Description = "Converts degrees to radians" }
+        ];
+    }
+
     public string Formula {
         get { return formula; }
         set {
@@ -33,99 +86,11 @@ internal class Evaluator {
             exp = new Expression(formula);
 
             exp.EvaluateFunction += (name, args) => {
-                switch(name.ToUpper()) {
-                    case "ABS":
-                        if(args.Parameters.Length != 1) throw new ArgumentException("ABS function requires exactly 1 parameter");
-                        args.Result = Math.Abs(Convert.ToDouble(args.Parameters[0].Evaluate()));
-                        break;
-                    case "AVG":
-                        if(args.Parameters.Length < 2) throw new ArgumentException("AVG function requires 2 parameters or more");
-                        args.Result = args.Parameters.Average(p => Convert.ToDouble(p.Evaluate()));
-                        break;
-                    case "COS":
-                        if(args.Parameters.Length != 1) throw new ArgumentException("COS function requires exactly 1 parameter");
-                        args.Result = Math.Cos(Convert.ToDouble(args.Parameters[0].Evaluate()));
-                        break;
-                    case "EXP":
-                        if(args.Parameters.Length != 1) throw new ArgumentException("EXP function requires exactly 1 parameter");
-                        args.Result = Math.Exp(Convert.ToDouble(args.Parameters[0].Evaluate()));
-                        break;
-                    case "IIF":
-                        if(args.Parameters.Length != 3) throw new ArgumentException("IIF function requires exactly 3 parameters");
-                        args.Result = Convert.ToBoolean(args.Parameters[0].Evaluate()) ? args.Parameters[1].Evaluate() : args.Parameters[2].Evaluate();
-                        break;
-                    case "INT":
-                        if(args.Parameters.Length != 1) throw new ArgumentException("INT function requires exactly 1 parameter");
-                        args.Result = Math.Floor(Convert.ToDouble(args.Parameters[0].Evaluate()));
-                        break;
-                    case "LN":
-                        if(args.Parameters.Length != 1) throw new ArgumentException("LN function requires exactly 1 parameter");
-                        args.Result = Math.Log(Convert.ToDouble(args.Parameters[0].Evaluate()));
-                        break;
-                    case "LOG10":
-                        if(args.Parameters.Length != 1) throw new ArgumentException("LOG10 function requires exactly 1 parameter");
-                        args.Result = Math.Log10(Convert.ToDouble(args.Parameters[0].Evaluate()));
-                        break;
-                    case "LOG2":
-                        if(args.Parameters.Length != 1) throw new ArgumentException("LOG2 function requires exactly 1 parameter");
-                        args.Result = Math.Log2(Convert.ToDouble(args.Parameters[0].Evaluate()));
-                        break;
-                    case "MAX":
-                        if(args.Parameters.Length < 2) throw new ArgumentException("MAX function requires 2 parameters or more");
-                        args.Result = args.Parameters.Max(p => Convert.ToDouble(p.Evaluate()));
-                        break;
-                    case "MIN":
-                        if(args.Parameters.Length < 2) throw new ArgumentException("MIN function requires 2 parameters or more");
-                        args.Result = args.Parameters.Min(p => Convert.ToDouble(p.Evaluate()));
-                        break;
-                    case "MOD":
-                        if(args.Parameters.Length != 2) throw new ArgumentException("MOD function requires exactly 2 parameters");
-                        args.Result = Convert.ToDouble(args.Parameters[0].Evaluate()) % Convert.ToDouble(args.Parameters[1].Evaluate());
-                        break;
-                    case "POW":
-                        if(args.Parameters.Length != 2) throw new ArgumentException("POW function requires exactly 2 parameters");
-                        args.Result = Math.Pow(Convert.ToDouble(args.Parameters[0].Evaluate()), Convert.ToDouble(args.Parameters[1].Evaluate()));
-                        break;
-                    case "RAND":
-                        if(args.Parameters.Length != 0) throw new ArgumentException("RND function requires exactly 0 parameters");
-                        args.Result = rnd.NextDouble();
-                        break;
-                    case "SIN":
-                        if(args.Parameters.Length != 1) throw new ArgumentException("SIN function requires exactly 1 parameter");
-                        args.Result = Math.Sin(Convert.ToDouble(args.Parameters[0].Evaluate()));
-                        break;
-                    case "SQRT":
-                        if(args.Parameters.Length != 1) throw new ArgumentException("SQRT function requires exactly 1 parameter");
-                        args.Result = Math.Sqrt(Convert.ToDouble(args.Parameters[0].Evaluate()));
-                        break;
-                    case "STD":
-                        if(args.Parameters.Length < 2) throw new ArgumentException("STD function requires 2 parameters or more");
-                        args.Result = CalculateStandardDeviation(args.Parameters, false);
-                        break;
-                    case "STDS":
-                        if(args.Parameters.Length < 2) throw new ArgumentException("STDS function requires 2 parameters or more");
-                        args.Result = CalculateStandardDeviation(args.Parameters, true);
-                        break;
-                    case "STR":
-                        if(args.Parameters.Length != 1) throw new ArgumentException("STR function requires exactly 1 parameter");
-                        args.Result = strings[Convert.ToInt32(args.Parameters[0].Evaluate())];
-                        break;
-                    case "SUM":
-                        if(args.Parameters.Length < 2) throw new ArgumentException("SUM function requires 2 parameters or more");
-                        args.Result = args.Parameters.Sum(p => Convert.ToDouble(p.Evaluate()));
-                        break;
-                    case "TAN":
-                        if(args.Parameters.Length != 1) throw new ArgumentException("TAN function requires exactly 1 parameter");
-                        args.Result = Math.Tan(Convert.ToDouble(args.Parameters[0].Evaluate()));
-                        break;
-                    case "TODEG":
-                        if(args.Parameters.Length != 1) throw new ArgumentException("TODEG function requires exactly 1 parameter");
-                        args.Result = Convert.ToDouble(args.Parameters[0].Evaluate()) / ToRad;
-                        break;
-                    case "TORAD":
-                        if(args.Parameters.Length != 1) throw new ArgumentException("TORAD function requires exactly 1 parameter");
-                        args.Result = Convert.ToDouble(args.Parameters[0].Evaluate()) * ToRad;
-                        break;
+                var func = functions.FirstOrDefault(f => f.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
+                if(func != null) {
+                    if(args.Parameters.Length < func.MinParamCount) throw new ArgumentException($"{func.Name} function requires at least {func.MinParamCount} parameter{(func.MinParamCount == 1 ? "" : "s")}");
+                    args.Result = func.Func(args);
+                    return;
                 }
             };
 
