@@ -46,6 +46,9 @@ internal class Cell(Sheet sheet, int col, int row) {
             bool hadError = hasError;
             hasError = false;
             this.value = value;
+
+            Eval.Strings.Clear();
+
             if(value != "") {
                 switch(value[0]) {
                     case '\'':
@@ -178,15 +181,10 @@ internal class Cell(Sheet sheet, int col, int row) {
     }
 
     internal static string ExtractStrings(string formula) {
-        Eval.Strings.Clear();
-
         int p0 = formula.IndexOf('"');
         while(p0 != -1) {
             int p1 = formula.IndexOf('"', p0 + 1);
-            if(p1 == -1) {
-                // Missing closing quote
-                break;
-            }
+            if(p1 == -1) break; // Missing closing quote
 
             string str = formula.Substring(p0, p1 - p0 + 1);
             int id = Eval.Strings.Count;
@@ -217,7 +215,7 @@ internal class Cell(Sheet sheet, int col, int row) {
             }
 
             if(cell.ValueEvaluated.Str is not null) {
-                Eval.Formula = ExtractStrings(cell.ValueEvaluated.Str);
+                Eval.Formula = Eval.Formula.Replace(rc, ExtractStrings(cell.ValueEvaluated.Str));
             }
             Eval.CustomParameters.Add(rc, cell.ValueEvaluated);
             DependentCells.Add(cell);
@@ -226,6 +224,12 @@ internal class Cell(Sheet sheet, int col, int row) {
         if(Eval.CustomParameters.ContainsKey(sheet.GetCellName(this))) {
             SetError("Circular reference");
             return (0, null);
+        }
+
+        try {
+            Eval.Evaluate();
+        } catch(Exception ex) {
+            SetError(ex.Message);
         }
 
         return hasError ? (0, null) : Eval.Evaluate();

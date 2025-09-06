@@ -13,7 +13,7 @@
 15000		
 		
 'Buget Types		'Budget
-="FINE"		=IIF(ABS(C11 - A13) < 0.001, A16, IIF(C11 > A13, A18, A17))
+="FINE"		=IIF(ABS(C11 - A13) < 0.01, A16, IIF(C11 > A13, A18, A17))
 ="UNDER"		
 ="OVER"		
 #COLUMN	0	12
