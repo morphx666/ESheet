@@ -38,12 +38,27 @@ internal partial class Sheet {
         SetColors(DefaultForeColor, DefaultBackColor);
 
         Cell? cell = GetCell(sc, sr);
-        WriteLine(cell?.ValueFormat ?? "");
+        if(cell == null) {
+            WriteLine("");
+        } else {
+            switch(cell.Type) {
+                case Cell.Types.Label:
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
+                    WriteLine(cell.ValueFormat);
+                    break;
 
-        if(cell != null && cell.Type == Cell.Types.Formula) {
-            Console.SetCursorPosition(cursorLeft, 0);
-            Console.Write(cell.ValueFormat[0]);
-            RenderFormula(cell);
+                case Cell.Types.Formula:
+                    WriteLine("");
+                    Console.SetCursorPosition(cursorLeft, 0);
+                    Console.Write(cell.ValueFormat[0]);
+                    RenderFormula(cell);
+                    break;
+
+                default:
+                    Console.ForegroundColor = DefaultForeColor;
+                    WriteLine(cell.ValueFormat);
+                    break;
+            }
         }
 
         RenderHeaders();
@@ -57,7 +72,7 @@ internal partial class Sheet {
         for(int i = 0; i < cell.Value.Length; i++) {
             var refCell = refCells.FirstOrDefault(c => c.Pos == i);
             if(refCell.Name != null) {
-                Console.ForegroundColor = FormulaRefCell;
+                Console.ForegroundColor = BackHeaderColor;
                 Console.Write(refCell.Name);
                 i += refCell.Name.Length - 1;
                 continue;
@@ -135,6 +150,7 @@ ReStart:
 
         int c = 0;
         while(true) {
+            // FIXME: Scrolling when there are columns with different widths is broken
             if(c == SelColumn - StartColumn) {
                 SetColors(ForeHeaderColor, BackHeaderSelColor);
             } else {
@@ -260,7 +276,7 @@ ReStart:
             }
 
             //if(cell != null && cell.Value.Contains("UNDER")) Debugger.Break();
-            if(cell != null && dependentCells.Contains(cell)) SetColors(ForeCellColor, BackRefCell);
+            if(cell != null && dependentCells.Contains(cell)) Console.BackgroundColor = BackRefCell;
 
             Console.SetCursorPosition(OffsetLeft + cc, OffsetTop + row + 1);
             Console.Write(result.Text);

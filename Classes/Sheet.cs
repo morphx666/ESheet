@@ -29,6 +29,7 @@ internal partial class Sheet {
     private readonly int ccCount = 'Z' - 'A' + 1; // 26
     private string userInput = "";
     private int editCursorPosition = 0;
+    private string emptyLine = "";
 
     private static readonly bool isLinux = Environment.OSVersion.Platform == PlatformID.Unix;
 
@@ -67,6 +68,7 @@ internal partial class Sheet {
 
     public Sheet() {
         Console.Title = "ESheet";
+        Console.ResetColor();
     }
 
     public void Run() {
@@ -85,6 +87,7 @@ MainLoop:
                     Console.Clear();
                     lastWorkingMode = Modes.Invalid; // Force Help re-render
                     Thread.Sleep(250); // Wait for the console to stabilize
+                    emptyLine = new(' ', Console.WindowWidth - 1);
                     goto MainLoop;
                 }
                 Thread.Sleep(60);

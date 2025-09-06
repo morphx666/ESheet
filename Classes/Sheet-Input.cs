@@ -87,7 +87,12 @@ internal partial class Sheet {
                     default:
                         switch(ck.Key) {
                             case ConsoleKey.Q:
-                                if(isOpKey) return;
+                                if(isOpKey) {
+                                    Console.ResetColor();
+                                    Console.SetCursorPosition(0, Console.WindowHeight - 1);
+                                    Console.WriteLine();
+                                    Environment.Exit(0);
+                                }
                                 break;
 
                             case ConsoleKey.K:
