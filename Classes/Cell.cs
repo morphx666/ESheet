@@ -140,7 +140,7 @@ internal class Cell(Sheet sheet, int col, int row) {
     }
 
     internal string ExpandRanges(string formula) {
-        string rangeSeparator = "..";
+        string rangeSeparator = ".."; // Should we use ":" instead?
         formula = formula.Replace("%", "*1/100");
 
         while(formula.Contains(rangeSeparator)) {
@@ -214,7 +214,7 @@ internal class Cell(Sheet sheet, int col, int row) {
                 return;
             }
 
-            if(cell.ValueEvaluated.Str is not null) {
+            if(cell.ValueEvaluated.Str != null) {
                 Eval.Formula = Eval.Formula.Replace(rc, ExtractStrings(cell.ValueEvaluated.Str));
             }
             Eval.CustomParameters.Add(rc, cell.ValueEvaluated);

@@ -1,4 +1,6 @@
-﻿internal partial class Sheet {
+﻿using System.Diagnostics;
+
+internal partial class Sheet {
     public ConsoleColor ForeCellColor { get; set; } = ConsoleColor.White;
     public ConsoleColor ForeCellErrorColor { get; set; } = ConsoleColor.Red;
     public ConsoleColor BackCellColor { get; set; } = ConsoleColor.Black;
@@ -54,7 +56,7 @@
         var refCells = cell.GetReferencedCells();
         for(int i = 0; i < cell.Value.Length; i++) {
             var refCell = refCells.FirstOrDefault(c => c.Pos == i);
-            if(refCell.Name is not null) {
+            if(refCell.Name != null) {
                 Console.ForegroundColor = FormulaRefCell;
                 Console.Write(refCell.Name);
                 i += refCell.Name.Length - 1;
@@ -184,15 +186,24 @@ ReStart:
                 } else {
                     switch(cell.Type) {
                         case Cell.Types.Number:
+                            Console.ForegroundColor = ForeCellColor;
                             value = cell.ValueEvaluated.Val.ToString($"N{RenderPrecision}");
                             break;
+
                         case Cell.Types.Formula:
-                            if(cell.ValueEvaluated.Str is not null) {
+                            if(cell.ValueEvaluated.Str != null) {
+                                Console.ForegroundColor = FormulaFunction;
                                 value = cell.ValueEvaluated.Str.Replace("\"", "");
                             } else {
                                 value = cell.ValueEvaluated.Val.ToString($"N{RenderPrecision}");
                             }
                             break;
+
+                        case Cell.Types.Label:
+                            Console.ForegroundColor = ConsoleColor.DarkYellow;
+                            value = cell.Value;
+                            break;
+
                         default:
                             value = cell.Value;
                             break;
@@ -204,6 +215,8 @@ ReStart:
                     dependentCells.AddRange(cell.DependentCells);
 
                     foreach(Cell ac in cell.DependentCells) {
+                        Console.ForegroundColor = ForeCellColor;
+
                         // TODO: This is the same code as above... extract it as a method or anonymous function
                         if(ac.HasError) {
                             value = "#ERROR";
@@ -212,13 +225,21 @@ ReStart:
                                 case Cell.Types.Number:
                                     value = ac.ValueEvaluated.Val.ToString($"N{RenderPrecision}");
                                     break;
+
                                 case Cell.Types.Formula:
-                                    if(ac.ValueEvaluated.Str is not null) {
+                                    if(ac.ValueEvaluated.Str != null) {
+                                        Console.ForegroundColor = FormulaFunction;
                                         value = ac.ValueEvaluated.Str.Replace("\"", "");
                                     } else {
                                         value = ac.ValueEvaluated.Val.ToString($"N{RenderPrecision}");
                                     }
                                     break;
+
+                                case Cell.Types.Label:
+                                    Console.ForegroundColor = ConsoleColor.DarkYellow;
+                                    value = cell.Value;
+                                    break;
+
                                 default:
                                     value = ac.Value;
                                     break;
@@ -238,7 +259,8 @@ ReStart:
                 }
             }
 
-            if(cell is not null && dependentCells.Contains(cell)) SetColors(ForeCellColor, BackRefCell);
+            //if(cell != null && cell.Value.Contains("UNDER")) Debugger.Break();
+            if(cell != null && dependentCells.Contains(cell)) SetColors(ForeCellColor, BackRefCell);
 
             Console.SetCursorPosition(OffsetLeft + cc, OffsetTop + row + 1);
             Console.Write(result.Text);
