@@ -150,7 +150,6 @@ ReStart:
 
         int c = 0;
         while(true) {
-            // FIXME: Scrolling when there are columns with different widths is broken
             if(c == SelColumn - StartColumn) {
                 SetColors(ForeHeaderColor, BackHeaderSelColor);
             } else {

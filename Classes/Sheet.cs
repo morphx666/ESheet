@@ -144,7 +144,7 @@ MainLoop:
     private int SheetColumnToConsoleColumn(int c) {
         int cc = 0;
         for(int i = 0; i < c; i++) {
-            cc += GetColumnWidth(i);
+            cc += GetColumnWidth(i + StartColumn);
         }
         return cc + RowHeaderWidth;
     }
