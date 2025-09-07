@@ -46,15 +46,7 @@ internal class Evaluator {
             new() { Name = "AVG",   MinParamCount = 2, Func = args => args.Parameters.Average(p => Convert.ToDouble(p.Evaluate())), Description = "Calculates the average (arithmetic mean) of parameters" },
             new() { Name = "COS",   MinParamCount = 1, Func = args => Math.Cos(Convert.ToDouble(args.Parameters[0].Evaluate())), Description = "Calculates the cosine of parameter (in radians)" },
             new() { Name = "EXP",   MinParamCount = 1, Func = args => Math.Exp(Convert.ToDouble(args.Parameters[0].Evaluate())), Description = "Calculates e raised to the power of parameter" },
-            new() { Name = "IIF",   MinParamCount = 3, Func = args => {
-                    bool r = Convert.ToBoolean(args.Parameters[0].Evaluate());
-                    if(r) {
-                        return args.Parameters[1].Evaluate();
-                    } else {
-                        return args.Parameters[2].Evaluate();
-                    }
-                },
-                Description = "If the first parameter is true, returns the second parameter, otherwise the third parameter" },
+            new() { Name = "IIF",   MinParamCount = 3, Func = args => Convert.ToBoolean(args.Parameters[0].Evaluate()) ? args.Parameters[1].Evaluate() : args.Parameters[2].Evaluate(), Description = "If the first parameter is true, returns the second parameter, otherwise the third parameter" },
             new() { Name = "INT",   MinParamCount = 1, Func = args => Math.Floor(Convert.ToDouble(args.Parameters[0].Evaluate())), Description = "Calculates the integer part of parameter" },
             new() { Name = "LN",    MinParamCount = 1, Func = args => Math.Log(Convert.ToDouble(args.Parameters[0].Evaluate())), Description = "Calculates the natural logarithm of parameter" },
             new() { Name = "LOG10", MinParamCount = 1, Func = args => Math.Log10(Convert.ToDouble(args.Parameters[0].Evaluate())), Description = "Calculates the base-10 logarithm of parameter" },

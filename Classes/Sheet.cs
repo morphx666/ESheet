@@ -90,7 +90,7 @@ MainLoop:
                     emptyLine = new(' ', Console.WindowWidth - 1);
                     goto MainLoop;
                 }
-                Thread.Sleep(60);
+                Thread.Sleep(30);
             }
 
             HandleInput();

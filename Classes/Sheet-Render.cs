@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-internal partial class Sheet {
+﻿internal partial class Sheet {
     public ConsoleColor ForeCellColor { get; set; } = ConsoleColor.White;
     public ConsoleColor ForeCellErrorColor { get; set; } = ConsoleColor.Red;
     public ConsoleColor BackCellColor { get; set; } = ConsoleColor.Black;
@@ -143,7 +141,7 @@ ReStart:
             string rowLabel = (r + StartRow).ToString();
             if(rowLabel.Length >= RowHeaderWidth) {
                 RowHeaderWidth = rowLabel.Length + 1;
-                goto ReStart; // Another goto? Am I going mad??? Well, it's better than recursion...
+                goto ReStart; // Another goto? 😨 Am I going mad??? Well, it's better than recursion...
             }
             Console.Write(AlignText(rowLabel, RowHeaderWidth, Cell.Alignments.Right));
         }
@@ -274,7 +272,6 @@ ReStart:
                 }
             }
 
-            //if(cell != null && cell.Value.Contains("UNDER")) Debugger.Break();
             if(cell != null && dependentCells.Contains(cell)) Console.BackgroundColor = BackRefCell;
 
             Console.SetCursorPosition(OffsetLeft + cc, OffsetTop + row + 1);
@@ -294,10 +291,12 @@ ReStart:
                 col++;
             }
         }
+
+        SetColors(DefaultForeColor, DefaultBackColor);
     }
 
     private void WriteLine(string text) {
-        string emptyRow = new(' ', Console.WindowWidth - OffsetLeft - text.Length);
+        string emptyRow = new(' ', Console.WindowWidth - Console.CursorLeft - OffsetLeft - text.Length);
         Console.Write(text + emptyRow);
     }
 
