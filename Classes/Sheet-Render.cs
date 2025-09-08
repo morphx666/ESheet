@@ -110,7 +110,7 @@
             Console.Write($"{Action}");
 
             if(--count > 0) {
-                SetColors(ConsoleColor.DarkGray, DefaultBackColor);
+                SetColors(ConsoleColor.Gray, DefaultBackColor);
                 Console.Write(" | ");
             }
         }

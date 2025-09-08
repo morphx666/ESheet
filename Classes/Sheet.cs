@@ -358,10 +358,10 @@ MainLoop:
         editCursorPosition = 0;
         workingMode = Modes.Default;
 
-        //StartColumn = 0;
-        //SelColumn = 0;
-        //StartRow = 0;
-        //SelRow = 0;
+        StartColumn = 0;
+        SelColumn = 0;
+        StartRow = 0;
+        SelRow = 0;
     }
 
     public bool LoadFile(string fileName) {
