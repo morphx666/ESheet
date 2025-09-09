@@ -262,6 +262,18 @@ internal class Cell(Sheet sheet, int col, int row) {
         return cells;
     }
 
+    internal void ShiftRefCells(int deltaCol, int deltaRow) {
+        string formula = value;
+        int offset = 0;
+        var refCells = GetReferencedCells();
+        foreach(var (Name, Pos, Column, Row) in refCells) {
+            string cellName = sheet.GetCellName(Column + deltaCol, Row + deltaRow);
+            formula = formula[..(Pos + offset)] + cellName + formula[(Pos + offset + Name.Length)..];
+            offset += cellName.Length - Name.Length;
+        }
+        Value = formula;
+    }
+
     internal void SetError(string message) {
         hasError = true;
         errorMessage = message;

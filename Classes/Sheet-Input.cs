@@ -2,35 +2,68 @@
 
 internal partial class Sheet {
     private void HandleInput() {
-        Cell? cell;
+        Cell? cell = GetCell(SelColumn, SelRow);
 
         Func<char, bool> IsCtrlChar = c => c == '\'' || c == '=' || c == '\\';
-        Func<bool> UserInputHasCtrlChar = () =>  userInput.Length > 0 && IsCtrlChar(userInput[0]);
+        Func<bool> UserInputHasCtrlChar = () => userInput.Length > 0 && IsCtrlChar(userInput[0]);
 
         ConsoleKeyInfo ck = Console.ReadKey(true);
 
         bool isOpKey = isLinux
                         ? (ck.Modifiers & ConsoleModifiers.Alt) == ConsoleModifiers.Alt
                         : (ck.Modifiers & ConsoleModifiers.Control) == ConsoleModifiers.Control;
+        bool isShiftKey = (ck.Modifiers & ConsoleModifiers.Shift) == ConsoleModifiers.Shift;
 
         // FIXME: There has to be a way to simplify this mess!
         switch(workingMode) {
             case Modes.Default:
                 switch(ck.Key) {
                     case ConsoleKey.UpArrow:
-                        if(SelRow > 0) SelRow--;
+                        if(SelRow > 0) {
+                            SelRow--;
+                            if(isShiftKey && cell?.Type == Cell.Types.Formula) {
+                                Cell? newCell = GetCell(SelColumn, SelRow) ?? new(this, SelColumn, SelRow);
+                                newCell.Value = cell.Value;
+                                newCell.ShiftRefCells(0, -1);
+                                Cells.Add(newCell);
+                                FullRefresh();
+                            }
+                        }
                         break;
 
                     case ConsoleKey.DownArrow:
                         SelRow++;
+                        if(isShiftKey && cell?.Type == Cell.Types.Formula) {
+                            Cell? newCell = GetCell(SelColumn, SelRow) ?? new(this, SelColumn, SelRow);
+                            newCell.Value = cell.Value;
+                            newCell.ShiftRefCells(0, 1);
+                            Cells.Add(newCell);
+                            FullRefresh();
+                        }
                         break;
 
                     case ConsoleKey.LeftArrow:
-                        if(SelColumn > 0) SelColumn--;
+                        if(SelColumn > 0) {
+                            SelColumn--;
+                            if(isShiftKey && cell?.Type == Cell.Types.Formula) {
+                                Cell? newCell = GetCell(SelColumn, SelRow) ?? new(this, SelColumn, SelRow);
+                                newCell.Value = cell.Value;
+                                newCell.ShiftRefCells(-1, 0);
+                                Cells.Add(newCell);
+                                FullRefresh();
+                            }
+                        }
                         break;
 
                     case ConsoleKey.RightArrow:
                         SelColumn++;
+                        if(isShiftKey && cell?.Type == Cell.Types.Formula) {
+                            Cell? newCell = GetCell(SelColumn, SelRow) ?? new(this, SelColumn, SelRow);
+                            newCell.Value = cell.Value;
+                            newCell.ShiftRefCells(1, 0);
+                            Cells.Add(newCell);
+                            FullRefresh();
+                        }
                         break;
 
                     case ConsoleKey.PageUp:
@@ -49,7 +82,6 @@ internal partial class Sheet {
                         break;
 
                     case ConsoleKey.Enter:
-                        cell = GetCell(SelColumn, SelRow);
                         if(cell != null) {
                             userInput = cell.ValueFormat;
                             editCursorPosition = userInput.Length;
@@ -62,7 +94,6 @@ internal partial class Sheet {
                         break;
 
                     case ConsoleKey.Delete:
-                        cell = GetCell(SelColumn, SelRow);
                         if(cell != null) {
                             Cells.Remove(cell);
                             string name = GetCellName(SelColumn, SelRow);
@@ -177,7 +208,6 @@ internal partial class Sheet {
                             userInput = userInput[0..editCursorPosition] + name + userInput[editCursorPosition..];
                             editCursorPosition += name.Length;
                         } else if(userInput.Length > 0) {
-                            cell = GetCell(SelColumn, SelRow);
                             if(cell == null) {
                                 cell = new Cell(this, SelColumn, SelRow);
                                 Cells.Add(cell);

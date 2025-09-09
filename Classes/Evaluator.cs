@@ -2,7 +2,6 @@
 using System.ComponentModel;
 
 internal class Evaluator {
-    public const double Infinity = 10 ^ 6;
     public const double ToRad = Math.PI / 180;
 
     public delegate void CustomFunctionDel(string name, FunctionArgs args);
@@ -62,7 +61,7 @@ internal class Evaluator {
             new("POW",      2, args => Math.Pow(Convert.ToDouble(args.Parameters[0].Evaluate()), Convert.ToDouble(args.Parameters[1].Evaluate())), "Calculates the power of the first parameter raised to the second parameter"),
             new("RAND",     0, args => new Random().NextDouble(),                                       "Generates a random number between 0 and 1"),
             new("SIN",      1, args => Math.Sin(Convert.ToDouble(args.Parameters[0].Evaluate())),       "Calculates the sine of parameter (in radians)"),
-            new("SQRT",     1, args => Math.Sqrt(Convert.ToDouble(args.Parameters[0].Evaluate())),      "Calculates the square root of parameter"),
+            new("SQRT",    1, args => Math.Sqrt(Convert.ToDouble(args.Parameters[0].Evaluate())),      "Calculates the square root of parameter"),
             new("STD",      2, args => {
                     double mean = args.Parameters.Average(p => Convert.ToDouble(p.Evaluate()));
                     double sumOfSquares = args.Parameters.Select(v => Math.Pow(Convert.ToDouble(v.Evaluate()) - mean, 2)).Sum();

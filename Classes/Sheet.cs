@@ -10,7 +10,6 @@ internal partial class Sheet {
 
     public int OffsetLeft { get; set; } = 0;
     public int OffsetTop { get; set; } = 3;
-
     public List<Cell> Cells { get; init; } = [];
     public List<Column> Columns { get; init; } = [];
     public int RowHeaderWidth { get; set; } = 4;
@@ -177,7 +176,6 @@ MainLoop:
     internal string GetCellName(Cell c) {
         return GetCellName(c.Column, c.Row);
     }
-
     internal (int Column, int Row) GetCellColRow(string name) {
         int c = 0;
         int k = 0;
