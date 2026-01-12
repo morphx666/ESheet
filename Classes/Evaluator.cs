@@ -1,5 +1,4 @@
 ﻿using NCalc;
-using System.ComponentModel;
 
 internal class Evaluator {
     public const double ToRad = Math.PI / 180;
@@ -41,7 +40,7 @@ internal class Evaluator {
 
     private delegate object MathFunc(FunctionArgs x);
     private readonly static List<MathFuncDef> functions = [];
-    public static string[] FunctionNames {  get => [.. functions.Select(f => f.Name)]; }
+    public static string[] FunctionNames {  get => [..functions.Select(f => f.Name)]; }
 
     public Evaluator() {
         if(functions.Count > 0) return;
@@ -61,7 +60,7 @@ internal class Evaluator {
             new("POW",      2, args => Math.Pow(Convert.ToDouble(args.Parameters[0].Evaluate()), Convert.ToDouble(args.Parameters[1].Evaluate())), "Calculates the power of the first parameter raised to the second parameter"),
             new("RAND",     0, args => new Random().NextDouble(),                                       "Generates a random number between 0 and 1"),
             new("SIN",      1, args => Math.Sin(Convert.ToDouble(args.Parameters[0].Evaluate())),       "Calculates the sine of parameter (in radians)"),
-            new("SQRT",    1, args => Math.Sqrt(Convert.ToDouble(args.Parameters[0].Evaluate())),      "Calculates the square root of parameter"),
+            new("SQRT",    1, args => Math.Sqrt(Convert.ToDouble(args.Parameters[0].Evaluate())),       "Calculates the square root of parameter"),
             new("STD",      2, args => {
                     double mean = args.Parameters.Average(p => Convert.ToDouble(p.Evaluate()));
                     double sumOfSquares = args.Parameters.Select(v => Math.Pow(Convert.ToDouble(v.Evaluate()) - mean, 2)).Sum();
@@ -104,6 +103,12 @@ internal class Evaluator {
                 switch(name.ToUpper()) {
                     case "PI":
                         args.Result = Math.PI;
+                        break;
+                    case "TAU":
+                        args.Result = Math.PI * 2;
+                        break;
+                    case "PHI":
+                        args.Result = (1 + Math.Sqrt(5)) / 2; // Golden ratio
                         break;
                     case "E":
                         args.Result = Math.E;

@@ -1,6 +1,3 @@
-using System.Diagnostics;
-using System.Linq;
-
 internal class Cell(Sheet sheet, int col, int row) {
     private string value = "";
     private (double Val, string? Str) valueEvaluated = (0, null);
@@ -140,7 +137,7 @@ internal class Cell(Sheet sheet, int col, int row) {
     }
 
     internal string ExpandRanges(string formula) {
-        string rangeSeparator = ".."; // Should we use ":" instead?
+        const string rangeSeparator = ".."; // Should we use ":" instead?
         formula = formula.Replace("%", "*1/100");
 
         while(formula.Contains(rangeSeparator)) {
@@ -174,7 +171,7 @@ internal class Cell(Sheet sheet, int col, int row) {
                 }
             }
             range = range.TrimEnd(',');
-            formula = formula.Replace($"{startCell}..{endCell}", range);
+            formula = formula.Replace($"{startCell}{rangeSeparator}{endCell}", range);
         }
 
         return formula;

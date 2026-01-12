@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Text;
 
 internal partial class Sheet {
@@ -30,7 +31,9 @@ internal partial class Sheet {
     private int editCursorPosition = 0;
     private string emptyLine = "";
 
-    private static readonly bool isLinux = Environment.OSVersion.Platform == PlatformID.Unix;
+    private static readonly bool isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+    private static readonly bool isMacOS = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+    private static readonly bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
     enum Modes {
         Invalid,
